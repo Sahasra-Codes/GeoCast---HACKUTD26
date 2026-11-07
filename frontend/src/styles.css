@@ -1,0 +1,10 @@
+﻿:root {
+  font-family: system-ui, sans-serif;
+  color: #172033;
+  background: #f5f7fb;
+  font-synthesis: none;
+}
+body { margin: 0; }
+main { max-width: 720px; margin: 15vh auto; padding: 2rem; }
+h1 { font-size: 3rem; margin-bottom: 1rem; }
+p { line-height: 1.6; }

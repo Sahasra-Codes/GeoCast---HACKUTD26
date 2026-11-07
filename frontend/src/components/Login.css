@@ -1,0 +1,61 @@
+.geo-login { min-height: 100dvh; display: grid; grid-template-columns: 1fr 1fr; background: #fff9f5; color: #392a27; font-family: Arial, Helvetica, sans-serif; }
+.geo-login a { text-decoration: none; color: inherit; }
+.login-story { position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 42px 9%; color: #fff5ed; background: radial-gradient(ellipse at 60% 60%, #cd3842, transparent 65%), linear-gradient(145deg, #ac1428, #901423); }
+.login-brand { display: flex; align-items: baseline; gap: 0; font: 36px Georgia, serif; letter-spacing: -2px; }
+.login-brand > span { color: #f5c4ae; }
+.login-brand small { font: 11px Arial, sans-serif; margin-left: 22px; letter-spacing: .05em; opacity: .8; }
+.login-story-content { margin: auto 0; padding-top: 48px; }
+.login-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .17em; }
+.login-story-content > .login-eyebrow { color: #f5bdb6; }
+.login-story h1 { margin: 20px 0; font: 58px/1.06 "Instrument Serif", Georgia, serif; letter-spacing: -1px; }
+.login-story h1 em { color: #ffd8bc; font-weight: 400; }
+.login-story-content > p { margin: 0; font-size: 14px; line-height: 1.8; color: #f2c7c4; }
+.login-mascot-scene { position: relative; display: grid; place-items: center; height: 320px; margin-top: 18px; }
+.login-mascot-scene img { position: relative; width: 260px; height: 260px; object-fit: contain; z-index: 1; filter: drop-shadow(0 15px 20px #56101e44); transform: rotate(-7deg); }
+.login-orbit { position: absolute; width: 310px; height: 210px; border: 1px solid #f5bdb633; border-radius: 50%; transform: rotate(-25deg); }
+.orbit-two { width: 360px; height: 250px; transform: rotate(25deg); border-style: dashed; }
+.login-mascot-note { position: absolute; bottom: 3px; font: italic 19px "Instrument Serif", Georgia, serif; color: #ffd4c4; }
+.login-story-footer { display: flex; align-items: center; gap: 8px; margin-top: 30px; padding-top: 20px; font-size: 10px; color: #f0bbb7; border-top: 1px solid #ffffff22; }
+.login-form-side { display: flex; flex-direction: column; padding: 44px 9% 24px; }
+.login-back { display: flex; align-items: center; gap: 10px; margin-left: auto; font-size: 12px; color: #9b2632 !important; }
+.login-card { width: 100%; max-width: 390px; margin: auto; padding: 52px 0 40px; }
+.login-card > .login-eyebrow { color: #aa2635; font-size: 9px; }
+.login-card h2 { margin: 16px 0 10px; font: 48px/1.1 "Instrument Serif", Georgia, serif; letter-spacing: -1px; }
+.login-intro { margin: 0 0 34px; color: #91817a; font-size: 13px; line-height: 1.6; }
+.login-card label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+.login-card input { width: 100%; min-width: 0; border: 1px solid #e8d4cc; border-radius: 14px; background: #fffcf9; padding: 15px 17px; font: 13px Arial, sans-serif; color: #392a27; }
+.login-card input::placeholder { color: #ac9d96; }
+.login-card input:focus { outline: 2px solid #bb5260; outline-offset: 2px; }
+.login-card input[type=email] { margin-bottom: 23px; }
+.login-password { position: relative; }
+.login-password input { padding-right: 49px; }
+.login-password button { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; padding: 7px; color: #a68d85; border-radius: 8px; }
+.login-submit, .login-demo { width: 100%; display: flex; justify-content: center; align-items: center; gap: 15px; padding: 15px; border-radius: 25px; font-size: 13px; font-weight: 700; }
+.login-submit { margin-top: 25px; color: white; background: #b01829; box-shadow: 0 4px 12px #b0182918; }
+.login-submit:hover { background: #971322; }
+.login-divider { display: flex; align-items: center; gap: 13px; margin: 24px 0; font-size: 10px; color: #a08b81; }
+.login-divider span { height: 1px; background: #ead9d1; flex: 1; }
+.login-demo { border: 1px solid #e7c8bf; color: #a4212f !important; background: #fffaf6; }
+.login-demo:hover { background: #f8ebe4; }
+.login-demo-note { font-size: 10px; color: #a18b81; text-align: center; margin: 12px 0 25px; }
+.login-features { display: flex; justify-content: center; gap: 15px; padding-top: 23px; border-top: 1px solid #ead9d1; }
+.login-features span { display: flex; align-items: center; gap: 6px; font-size: 9px; color: #90796f; }
+.login-features svg { color: #b01829; flex-shrink: 0; }
+.login-disclosure { font-size: 10px; line-height: 1.6; text-align: center; color: #a18b81; margin: 23px 10px 0; }
+.login-notice { padding: 12px; border: 1px solid #e7c8bf; border-radius: 12px; font-size: 12px; line-height: 1.6; color: #962936; background: #f8eae4; }
+.login-footer { display: flex; justify-content: space-between; gap: 15px; font-size: 9px; color: #a18b81; }
+.geo-login button:focus-visible, .geo-login a:focus-visible { outline: 2px solid #b01829; outline-offset: 4px; }
+@media (min-width: 1400px) { .login-story { padding-left: 13%; padding-right: 13%; } .login-story h1 { font-size: 68px; } }
+@media (max-width: 850px) { .geo-login { grid-template-columns: .85fr 1fr; } .login-story { padding: 32px 8%; } .login-story h1 { font-size: 45px; } .login-mascot-scene img { width: 210px; height: 210px; } .login-mascot-scene { height: 270px; } .login-orbit { width: 240px; height: 180px; } .orbit-two { width: 270px; height: 210px; } .login-brand small { display: none; } .login-form-side { padding: 32px 8% 20px; } .login-card h2 { font-size: 40px; } }
+@media (max-width: 600px) { .geo-login { display: block; } .login-story { min-height: 280px; padding: 24px; } .login-story-content { padding-top: 26px; } .login-story h1 { font-size: 39px; margin: 12px 0; max-width: 260px; } .login-story-content > p { font-size: 11px; max-width: 230px; } .login-story-content > .login-eyebrow { font-size: 8px; } .login-mascot-scene { position: absolute; right: -24px; bottom: 20px; width: 155px; height: 170px; margin: 0; } .login-mascot-scene img { width: 135px; height: 135px; } .login-orbit { width: 150px; height: 110px; } .orbit-two { width: 170px; height: 125px; } .login-mascot-note, .login-story-footer { display: none; } .login-form-side { padding: 22px 26px; } .login-card { padding: 32px 0; } .login-card h2 { font-size: 42px; } .login-back { font-size: 11px; } .login-footer { padding-top: 15px; } }
+
+/* Consistent, professional typography for the login page. */
+.geo-login { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif; }
+.login-brand { font-family: inherit; font-weight: 750; letter-spacing: -1.5px; }
+.login-brand small, .login-card input { font-family: inherit; }
+.login-story h1 { font-family: inherit; font-size: clamp(38px, 3.7vw, 58px); font-weight: 650; line-height: 1.16; letter-spacing: -1.8px; }
+.login-story h1 em { font-style: normal; font-weight: 650; }
+.login-card h2 { font-family: inherit; font-size: 38px; font-weight: 650; line-height: 1.2; letter-spacing: -1.2px; }
+.login-mascot-note { font-family: inherit; font-size: 13px; font-style: normal; font-weight: 500; letter-spacing: .02em; }
+@media (max-width: 850px) { .login-story h1 { font-size: 38px; } .login-card h2 { font-size: 34px; } }
+@media (max-width: 600px) { .login-story h1 { font-size: 32px; letter-spacing: -1px; } .login-card h2 { font-size: 34px; } }

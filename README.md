@@ -40,3 +40,17 @@ npm.cmd run build
 
 The frontend build is written to `frontend/dist`. For deployment, configure your
 web server to forward `/api` to FastAPI; the Vite proxy only runs in development.
+
+## GEO Guide chatbot
+
+The bottom-right assistant answers questions through `POST /api/chat` and offers
+navigation buttons for filters, assistance, and data information.
+
+Add `GEMINI_API_KEY=your_key` to `backend/.env` and restart FastAPI. Optionally set
+`GEMINI_MODEL` (default: `gemini-3.1-flash-lite`). See `backend/.env.example`.
+Install updated backend requirements before starting. Keys stay on the backend.
+Without a key, navigation works and chat displays a configuration message.
+Chat history is kept in memory for this page session; the last 19 messages and
+current filter context are sent to Gemini when you ask a question.
+The Vite development proxy forwards `/api` to port 8000. For production, proxy
+`/api` to FastAPI on the same origin. Do not expose provider keys through Vite.

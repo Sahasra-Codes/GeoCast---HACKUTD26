@@ -1,0 +1,97 @@
+﻿import {
+  Check,
+  ChevronDown,
+  HeartPulse,
+  PersonStanding,
+  Radio,
+  HandHeart,
+  PackageOpen,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { needCategories } from "../data/geo";
+const icons = {
+  medical: HeartPulse,
+  mobility: PersonStanding,
+  visibility: Radio,
+  assistance: HandHeart,
+  basic: PackageOpen,
+};
+export default function PopulationNeedFilters({
+  selected,
+  onChange,
+  match,
+  onMatch,
+}: {
+  selected: string[];
+  onChange: (needs: string[]) => void;
+  match: "any" | "all";
+  onMatch: (value: "any" | "all") => void;
+}) {
+  const toggle = (need: string) =>
+    onChange(
+      selected.includes(need)
+        ? selected.filter((n) => n !== need)
+        : [...selected, need],
+    );
+  return (
+    <details className="population-filters" open>
+      <summary>
+        <span>
+          Population needs
+          <span className="count-pill">{selected.length || "20"}</span>
+        </span>
+        <ChevronDown size={15} />
+      </summary>
+      <p className="filter-description">
+        A little context. A clearer picture of need.
+      </p>
+      <div className="match-control">
+        <span>Match selected needs</span>
+        <div aria-label="Need matching mode" role="group">
+          {(["any", "all"] as const).map((mode) => (
+            <button
+              key={mode}
+              aria-pressed={match === mode}
+              className={match === mode ? "chosen" : ""}
+              onClick={() => onMatch(mode)}
+            >
+              {mode === "any" ? "Any" : "All"}
+            </button>
+          ))}
+        </div>
+      </div>
+      {needCategories.map((category, i) => {
+        const Icon = icons[category.icon as keyof typeof icons];
+        return (
+          <details
+            className="need-category"
+            key={category.title}
+            open={i === 0 || i === 4}
+          >
+            <summary>
+              <span>
+                <Icon size={14} />
+                {category.title}
+              </span>
+              <ChevronDown size={13} />
+            </summary>
+            <div className="need-chips">
+              {category.needs.map((need) => (
+                <motion.button
+                  key={need}
+                  whileTap={{ scale: 0.97 }}
+                  aria-pressed={selected.includes(need)}
+                  onClick={() => toggle(need)}
+                  className={selected.includes(need) ? "selected" : ""}
+                >
+                  {selected.includes(need) && <Check size={11} />}
+                  {need}
+                </motion.button>
+              ))}
+            </div>
+          </details>
+        );
+      })}
+    </details>
+  );
+}

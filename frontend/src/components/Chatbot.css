@@ -1,0 +1,72 @@
+.geo-chat {
+  --chat-red: #b01829;
+  --chat-ink: #342724;
+  --chat-cream: #fff9f5;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--chat-ink);
+}
+.geo-chat *, .geo-chat *::before, .geo-chat *::after { box-sizing: border-box; }
+.geo-chat button { cursor: pointer; font: inherit; }
+.geo-chat button:focus-visible, .geo-chat input:focus-visible { outline: 3px solid #c25b4f; outline-offset: 3px; }
+.geo-chat-launcher {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  margin-left: auto; min-height: 56px; padding: 4px 20px 4px 7px;
+  border: 1px solid #c94650; border-radius: 32px;
+  background: linear-gradient(135deg, #bc2134, #a51020); color: #fff;
+  box-shadow: 0 5px 22px #7b1c2730; font-weight: 700; font-size: 15px;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.geo-chat-launcher:hover { transform: translateY(-2px); box-shadow: 0 8px 26px #7b1c2740; }
+.geo-chat-launcher img { width: 48px; height: 48px; object-fit: contain; }
+.geo-chat-launcher.is-open { width: 48px; min-height: 48px; padding: 0; }
+.geo-chat-panel {
+  width: min(376px, calc(100vw - 32px));
+  height: min(486px, calc(100dvh - 108px));
+  margin-bottom: 12px; display: flex; flex-direction: column;
+  background: var(--chat-red); border: 1px solid #ead0c8; border-radius: 28px;
+  overflow: hidden; box-shadow: 0 14px 45px #66302d26, 0 3px 9px #66302d0c;
+  animation: geo-chat-enter .2s ease-out;
+}
+.geo-chat-header { display: flex; align-items: center; gap: 14px; padding: 9px 17px 0 26px; min-height: 73px; color: white; background: linear-gradient(115deg, #b91d30, #a21124); }
+.geo-chat-avatar { width: 65px; height: 65px; object-fit: contain; align-self: flex-end; position: relative; z-index: 1; filter: drop-shadow(0 1px 0 #fff); }
+.geo-chat-header h2 { margin: 0 0 7px; font: 700 23px/1.2 Arial, Helvetica, sans-serif; letter-spacing: -.5px; flex: 1; }
+.geo-chat-header button { display: grid; place-items: center; align-self: flex-start; margin-top: 10px; border: 0; background: transparent; color: #ffe8e5; padding: 5px; border-radius: 50%; }
+.geo-chat-header button:hover { background: #ffffff1a; }
+.geo-chat-body { display: flex; flex-direction: column; flex: 1; min-height: 0; border-radius: 29px 29px 0 0; padding: 29px 21px 12px; background: radial-gradient(ellipse at 50% 30%, #fffaf7, #fcf3ef); }
+.geo-chat-messages { flex: 1; overflow-y: auto; min-height: 81px; padding: 2px 0 6px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #d8bcb5 transparent; }
+.geo-chat-message { width: fit-content; max-width: 94%; padding: 12px 16px; margin: 0 0 12px; border-radius: 21px 21px 21px 4px; background: #f0e2de; overflow-wrap: anywhere; }
+.geo-chat-message.welcome { background: linear-gradient(110deg, #f3e8e5, #edddda); margin-bottom: 4px; }
+.geo-chat-message.user { margin-left: auto; border-radius: 21px 21px 4px 21px; background: #b01829; color: #fff; }
+.geo-chat-message strong { display: block; font-size: 17px; line-height: 1.4; letter-spacing: -.4px; }
+.geo-chat-message strong span { font-size: 23px; vertical-align: -2px; }
+.geo-chat-message small { font-size: 10px; font-weight: 700; letter-spacing: .04em; opacity: .8; }
+.geo-chat-message p { margin: 3px 0 0; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+.geo-chat-message.welcome p { font-size: 16px; }
+.geo-chat-shortcuts { display: grid; gap: 10px; padding: 10px 2px 25px 21px; }
+.geo-chat-shortcuts button { display: flex; align-items: center; gap: 22px; min-height: 45px; width: 100%; border: 1.5px solid #ecd0c8; border-radius: 25px; padding: 8px 18px; background: #fffaf66b; color: #422b27; box-shadow: 0 2px 3px #803b2d08; text-align: left; transition: background .15s, border-color .15s; }
+.geo-chat-shortcuts button:hover { background: #f6e5df; border-color: #cf9188; }
+.geo-chat-shortcuts svg { flex-shrink: 0; color: #a51827; stroke-width: 2.3; }
+.geo-chat-shortcuts span { font-size: 14px; font-weight: 700; letter-spacing: -.35px; }
+.geo-chat-form { display: flex; align-items: center; gap: 5px; min-height: 51px; padding: 4px 5px 4px 18px; border: 1.5px solid #e7d5ce; border-radius: 28px; background: #fffdfa9c; }
+.geo-chat-form:focus-within { border-color: #c46a6b; box-shadow: 0 0 0 2px #b0182909; }
+.geo-chat-form input { flex: 1; width: 0; min-width: 0; border: 0; outline: none; padding: 8px 0; background: transparent; color: #342724; font: 15px/1.3 Arial, Helvetica, sans-serif; }
+.geo-chat-form input::placeholder { color: #918783; }
+.geo-chat-form input:focus-visible { outline: none; }
+.geo-chat-form button { display: grid; place-items: center; flex-shrink: 0; border: 2px solid white; border-radius: 50%; background: var(--chat-red); color: white; width: 39px; height: 39px; box-shadow: 0 0 0 1px #edc5c0; }
+.geo-chat button:disabled { cursor: default; }
+.geo-chat-shortcuts button:disabled { opacity: .5; }
+.geo-chat-form button:disabled { background: #bd4550; }
+.geo-chat-footnote { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 9px; color: #967e77; font-size: 9px; line-height: 1.2; }
+.geo-chat-footnote button { border: 0; padding: 0; background: transparent; color: #967e77; text-decoration: underline; font-size: 9px; }
+.geo-chat-error { max-height: 64px; overflow-y: auto; flex-shrink: 0; margin: 0 4px 9px; color: #a01e2c; font-size: 11px; line-height: 1.4; }
+.geo-chat-thinking { display: flex; gap: 7px; align-items: center; font-size: 12px; color: #a01e2c; }
+.geo-chat-spin { animation: geo-chat-rotate 1s linear infinite; }
+@keyframes geo-chat-rotate { to { transform: rotate(360deg); } }
+@keyframes geo-chat-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 600px) { .geo-chat { right: 16px; bottom: 16px; } }
+@media (max-height: 600px) { .geo-chat-panel { height: calc(100dvh - 98px); } .geo-chat-body { padding-top: 12px; } .geo-chat-shortcuts { gap: 5px; padding-bottom: 10px; } .geo-chat-shortcuts button { min-height: 36px; padding-top: 4px; padding-bottom: 4px; } }
+@media (prefers-reduced-motion: reduce) { .geo-chat-spin, .geo-chat-panel { animation: none; } .geo-chat-launcher { transition: none; } }

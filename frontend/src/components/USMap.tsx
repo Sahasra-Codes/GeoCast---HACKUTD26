@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import * as maplibregl from "maplibre-gl";
 import type { Map as LibreMap, StyleSpecification } from "maplibre-gl";
@@ -32,11 +32,14 @@ interface Props {
   focus?: GeographicRegion;
   showPopup: boolean;
   showForecast: boolean;
+  showOverlays?: boolean;
   onEvent: (event: DisasterEvent) => void;
   onRegion: (region: GeographicRegion) => void;
   onExplore: (event: DisasterEvent) => void;
   onClosePopup: () => void;
   onResource: (resource: AssistanceResource) => void;
+  visibleEventIds?: string[];
+  visibleCountyIds?: string[];
 }
 export default function USMap(props: Props) {
   const container = useRef<HTMLDivElement>(null);
@@ -44,6 +47,15 @@ export default function USMap(props: Props) {
   const [tileError, setTileError] = useState(false);
   const [fatalError, setFatalError] = useState(false);
   const callbacks = useRef(props);
+  const visiblePredictions = useMemo(
+    () =>
+      props.visibleCountyIds
+        ? props.data.predictions.filter((p) =>
+            props.visibleCountyIds!.includes(p.countyId),
+          )
+        : props.data.predictions,
+    [props.data, props.visibleCountyIds],
+  );
   useEffect(() => {
     callbacks.current = props;
   }, [props]);
@@ -87,7 +99,7 @@ export default function USMap(props: Props) {
           id: "state-areas",
           type: "fill",
           source: "us-states",
-          paint: { "fill-color": "#192d44", "fill-opacity": 0.9 },
+          paint: { "fill-color": "#a9bda5", "fill-opacity": 0.9 },
         },
         map.getStyle().layers.find((l) => l.type !== "background")?.id,
       );
@@ -96,7 +108,7 @@ export default function USMap(props: Props) {
         type: "line",
         source: "us-states",
         paint: {
-          "line-color": "#6885a4",
+          "line-color": "#667e6c",
           "line-opacity": 0.34,
           "line-width": 0.8,
         },
@@ -105,7 +117,7 @@ export default function USMap(props: Props) {
         id: "county-areas",
         type: "fill",
         source: "us-counties",
-        minzoom: 5,
+        minzoom: 4.5,
         paint: { "fill-opacity": 0 },
       });
       map.addLayer({
@@ -114,10 +126,61 @@ export default function USMap(props: Props) {
         source: "us-counties",
         minzoom: 5,
         paint: {
-          "line-color": "#6c88a4",
+          "line-color": "#667e6c",
           "line-opacity": 0.2,
           "line-width": 0.5,
         },
+      });
+      map.addSource("atlas-grid", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: [
+            ...Array.from({ length: 15 }, (_, i) => ({
+              type: "Feature" as const,
+              properties: {},
+              geometry: {
+                type: "LineString" as const,
+                coordinates: [
+                  [-130 + i * 5, 18],
+                  [-130 + i * 5, 57],
+                ],
+              },
+            })),
+            ...Array.from({ length: 9 }, (_, i) => ({
+              type: "Feature" as const,
+              properties: {},
+              geometry: {
+                type: "LineString" as const,
+                coordinates: [
+                  [-135, 18 + i * 5],
+                  [-55, 18 + i * 5],
+                ],
+              },
+            })),
+          ],
+        },
+      });
+      map.addLayer({
+        id: "atlas-grid-lines",
+        type: "line",
+        source: "atlas-grid",
+        maxzoom: 7,
+        paint: {
+          "line-color": "#f3f2d9",
+          "line-width": 0.6,
+          "line-opacity": 0.3,
+        },
+      });
+      map.addSource("hover-region", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "hover-region-fill",
+        type: "fill",
+        source: "hover-region",
+        paint: { "fill-color": "#557865", "fill-opacity": 0.15 },
       });
       map.addSource("selection", {
         type: "geojson",
@@ -127,13 +190,13 @@ export default function USMap(props: Props) {
         id: "selection-fill",
         type: "fill",
         source: "selection",
-        paint: { "fill-color": "#38bdf8", "fill-opacity": 0.13 },
+        paint: { "fill-color": "#4d8b82", "fill-opacity": 0.13 },
       });
       map.addLayer({
         id: "selection-line",
         type: "line",
         source: "selection",
-        paint: { "line-color": "#74d2fc", "line-width": 2 },
+        paint: { "line-color": "#416e58", "line-width": 2 },
       });
       map.addSource("impact-zones", {
         type: "geojson",
@@ -152,14 +215,14 @@ export default function USMap(props: Props) {
         id: "impact-fill",
         type: "fill",
         source: "impact-zones",
-        paint: { "fill-color": "#eaa265", "fill-opacity": 0.09 },
+        paint: { "fill-color": "#c48c65", "fill-opacity": 0.09 },
       });
       map.addLayer({
         id: "impact-line",
         type: "line",
         source: "impact-zones",
         paint: {
-          "line-color": "#eaa265",
+          "line-color": "#c48c65",
           "line-width": 1,
           "line-opacity": 0.35,
           "line-dasharray": [3, 4],
@@ -179,14 +242,14 @@ export default function USMap(props: Props) {
         id: "scenario-county-fill",
         type: "fill",
         source: "scenario-counties",
-        paint: { "fill-color": "#38bdf8", "fill-opacity": 0.18 },
+        paint: { "fill-color": "#4d8b82", "fill-opacity": 0.18 },
       });
       map.addLayer({
         id: "scenario-county-line",
         type: "line",
         source: "scenario-counties",
         paint: {
-          "line-color": "#77bed5",
+          "line-color": "#6d9986",
           "line-width": 1,
           "line-dasharray": [2, 2],
         },
@@ -209,7 +272,7 @@ export default function USMap(props: Props) {
         type: "line",
         source: "forecast",
         paint: {
-          "line-color": "#eaa265",
+          "line-color": "#c48c65",
           "line-width": 22,
           "line-opacity": 0.09,
           "line-blur": 10,
@@ -220,7 +283,7 @@ export default function USMap(props: Props) {
         type: "line",
         source: "forecast",
         paint: {
-          "line-color": "#eaa265",
+          "line-color": "#c48c65",
           "line-width": 2,
           "line-dasharray": [3, 3],
           "line-opacity": 0.85,
@@ -244,7 +307,25 @@ export default function USMap(props: Props) {
           );
         if (region) callbacks.current.onRegion(region);
       });
+      let hoveredId: string | undefined;
       map.on("mousemove", (e) => {
+        const hit = map.queryRenderedFeatures(e.point, {
+          layers: ["county-areas", "state-areas"],
+        })[0];
+        const id = hit ? String(hit.id) : undefined;
+        if (id !== hoveredId) {
+          hoveredId = id;
+          const original =
+            id &&
+            [
+              ...props.geography.counties.features,
+              ...props.geography.states.features,
+            ].find((f) => String(f.id) === id);
+          (map.getSource("hover-region") as maplibregl.GeoJSONSource).setData({
+            type: "FeatureCollection",
+            features: original ? [original] : [],
+          });
+        }
         map.getCanvas().style.cursor = map.queryRenderedFeatures(e.point, {
           layers: ["state-areas", "county-areas"],
         }).length
@@ -257,11 +338,37 @@ export default function USMap(props: Props) {
           [-125, 23],
           [-66, 50],
         ],
-        { padding: { top: 140, left: 50, right: 40, bottom: 70 }, duration: 0 },
+        {
+          padding: { top: 100, left: 40, right: 40, bottom: 100 },
+          duration: 0,
+        },
       );
     };
+    map.on("movestart", () => {
+      if (container.current) container.current.dataset.cameraMoving = "true";
+    });
+    map.on("moveend", () => {
+      if (container.current) container.current.dataset.cameraMoving = "false";
+    });
     map.on("style.load", initialize);
-    map.on("error", () => setTileError(true));
+    map.on("error", (e) => {
+      setTileError(true);
+      if (
+        "sourceId" in e &&
+        e.sourceId === "openmaptiles" &&
+        map.getLayer("background")
+      )
+        map.setPaintProperty("background", "background-color", "#a7c9cf");
+    });
+    map.on("dataloading", () => {
+      if (container.current) container.current.dataset.mapIdle = "false";
+    });
+    map.on("movestart", () => {
+      if (container.current) container.current.dataset.mapIdle = "false";
+    });
+    map.on("idle", () => {
+      if (container.current) container.current.dataset.mapIdle = "true";
+    });
     map.on("sourcedata", (e) => {
       if (e.sourceId === "us-states" && e.isSourceLoaded && container.current)
         container.current.dataset.boundariesReady = "true";
@@ -276,7 +383,7 @@ export default function USMap(props: Props) {
             {
               id: "background",
               type: "background",
-              paint: { "background-color": "#080f1e" },
+              paint: { "background-color": "#a7c9cf" },
             },
           ],
         });
@@ -304,7 +411,7 @@ export default function USMap(props: Props) {
           [-66, 50],
         ],
         {
-          padding: { top: 140, left: 50, right: 40, bottom: 70 },
+          padding: { top: 100, left: 40, right: 40, bottom: 100 },
           duration: 800,
         },
       );
@@ -338,9 +445,13 @@ export default function USMap(props: Props) {
       readyMap.setLayoutProperty(
         id,
         "visibility",
-        props.showForecast && props.layer === "activity" ? "visible" : "none",
+        props.showForecast &&
+          props.showOverlays !== false &&
+          props.layer === "activity"
+          ? "visible"
+          : "none",
       );
-  }, [readyMap, props.showForecast, props.layer]);
+  }, [readyMap, props.showForecast, props.layer, props.showOverlays]);
   useEffect(() => {
     if (!readyMap) return;
     for (const id of ["scenario-county-fill", "scenario-county-line"])
@@ -349,7 +460,7 @@ export default function USMap(props: Props) {
         "visibility",
         props.layer === "activity" ? "visible" : "none",
       );
-  }, [readyMap, props.layer]);
+  }, [readyMap, props.layer, props.showOverlays]);
   useEffect(() => {
     if (!readyMap || !props.showPopup || !props.selectedEvent) return;
     readyMap.easeTo({
@@ -359,6 +470,51 @@ export default function USMap(props: Props) {
       duration: 1000,
     });
   }, [readyMap, props.selectedEvent, props.showPopup]);
+  useEffect(() => {
+    if (!readyMap) return;
+    const events = props.data.events.filter(
+      (event) =>
+        !props.visibleEventIds || props.visibleEventIds.includes(event.id),
+    );
+    (readyMap.getSource("forecast") as maplibregl.GeoJSONSource).setData({
+      type: "FeatureCollection",
+      features: events
+        .filter((e) => e.forecast)
+        .map((e) => ({
+          type: "Feature",
+          properties: {},
+          geometry: { type: "LineString", coordinates: e.forecast! },
+        })),
+    });
+    (readyMap.getSource("impact-zones") as maplibregl.GeoJSONSource).setData({
+      type: "FeatureCollection",
+      features: events
+        .filter((e) => e.impactZone)
+        .map((e) => ({
+          type: "Feature",
+          properties: { name: e.name },
+          geometry: { type: "Polygon", coordinates: [e.impactZone!] },
+        })),
+    });
+    const ids = new Set(
+      props.visibleCountyIds ||
+        events.flatMap((e) => e.affectedCountyIds || [e.countyId]),
+    );
+    (
+      readyMap.getSource("scenario-counties") as maplibregl.GeoJSONSource
+    ).setData({
+      type: "FeatureCollection",
+      features: props.geography.counties.features.filter((f) =>
+        ids.has(String(f.id)),
+      ),
+    });
+  }, [
+    readyMap,
+    props.visibleEventIds,
+    props.visibleCountyIds,
+    props.data,
+    props.geography,
+  ]);
   const reset = () =>
     readyMap?.fitBounds(
       [
@@ -366,7 +522,7 @@ export default function USMap(props: Props) {
         [-66, 50],
       ],
       {
-        padding: { top: 140, left: 50, right: 40, bottom: 70 },
+        padding: { top: 100, left: 40, right: 40, bottom: 100 },
         duration: 1200,
       },
     );
@@ -399,20 +555,26 @@ export default function USMap(props: Props) {
           <RiskHeatmap
             map={readyMap}
             counties={props.geography.counties}
-            predictions={props.data.predictions}
+            predictions={visiblePredictions}
             layer={props.layer}
           />
-          {props.layer === "activity" &&
-            props.data.events.map((event) => (
-              <DisasterMarker
-                key={event.id}
-                map={readyMap}
-                event={event}
-                selected={props.selectedEvent?.id === event.id}
-                onSelect={props.onEvent}
-              />
-            ))}
-          {props.layer === "activity" &&
+          {props.layer !== "assistance" &&
+            props.data.events
+              .filter(
+                (event) =>
+                  !props.visibleEventIds ||
+                  props.visibleEventIds.includes(event.id),
+              )
+              .map((event) => (
+                <DisasterMarker
+                  key={event.id}
+                  map={readyMap}
+                  event={event}
+                  selected={props.selectedEvent?.id === event.id}
+                  onSelect={props.onEvent}
+                />
+              ))}
+          {props.layer !== "assistance" &&
             props.showPopup &&
             props.selectedEvent && (
               <DisasterPopup
@@ -424,14 +586,20 @@ export default function USMap(props: Props) {
               />
             )}
           {props.layer === "assistance" &&
-            props.data.resources.map((resource) => (
-              <ResourceMarker
-                key={resource.id}
-                map={readyMap}
-                resource={resource}
-                onSelect={props.onResource}
-              />
-            ))}
+            props.data.resources
+              .filter(
+                (resource) =>
+                  !props.visibleCountyIds ||
+                  props.visibleCountyIds.includes(resource.countyId),
+              )
+              .map((resource) => (
+                <ResourceMarker
+                  key={resource.id}
+                  map={readyMap}
+                  resource={resource}
+                  onSelect={props.onResource}
+                />
+              ))}
         </>
       )}
       <div className="map-tools panel">

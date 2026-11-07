@@ -1,41 +1,44 @@
 ﻿import { test, expect } from "@playwright/test";
 
-test("explore disaster scenarios, county predictions, needs and resources", async ({
-  page,
-}) => {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+async function ready(page: import("@playwright/test").Page) {
   await page.goto("/");
-  await expect(
-    page.getByRole("heading", {
-      name: "A clearer picture. A stronger response.",
-    }),
-  ).toBeVisible();
-  await expect(page.locator(".disaster-marker")).toHaveCount(5, {
-    timeout: 45000,
-  });
-  await expect(page.locator("canvas.maplibregl-canvas")).toBeVisible();
   await expect(page.locator(".map-canvas")).toHaveAttribute(
     "data-boundaries-ready",
     "true",
+    { timeout: 45000 },
   );
+  await expect(page.locator(".map-canvas")).toHaveAttribute(
+    "data-camera-moving",
+    "false",
+  );
+  await page.evaluate(() => document.fonts.ready);
+}
+
+test("GEO uses Instrument Serif and supports geographic disaster exploration", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await ready(page);
+  await expect(
+    page.getByRole("heading", { name: "Explore GEO." }),
+  ).toBeVisible();
+  await expect(page.locator(".disaster-marker")).toHaveCount(5);
+  await expect(page.locator(".community-panel")).toHaveCount(0);
+  expect(
+    await page.evaluate(() => getComputedStyle(document.body).fontFamily),
+  ).toContain("Instrument Serif");
+  expect(
+    await page.evaluate(() => document.fonts.check('17px "Instrument Serif"')),
+  ).toBe(true);
   await page.screenshot({
-    path: "test-results/desktop-overview.png",
+    path: "test-results/geo-overview.png",
     fullPage: true,
   });
   await page
-    .getByRole("button", {
-      name: "Explore Sierra wildfire scenario",
-      exact: true,
-    })
-    .click();
-  await expect(page.locator(".disaster-popup")).toContainText(
-    "Sierra wildfire scenario",
-  );
-  await page.getByRole("button", { name: "Close event card" }).click();
-  await page
-    .getByRole("button", { name: "Reset map to United States" })
-    .click();
+    .getByLabel("Disaster type", { exact: true })
+    .selectOption("Hurricane");
+  await expect(page.locator(".disaster-marker")).toHaveCount(2);
   await page
     .getByRole("button", {
       name: "Explore Gulf hurricane scenario",
@@ -45,95 +48,184 @@ test("explore disaster scenarios, county predictions, needs and resources", asyn
   await expect(page.locator(".disaster-popup")).toContainText(
     "Gulf hurricane scenario",
   );
-  await expect(page.locator(".disaster-popup")).toContainText(
-    "Simulated declaration",
+  await expect(page.locator(".community-panel")).toContainText(
+    "synthetic scenario",
   );
   await page
     .locator(".disaster-popup")
     .getByRole("button", { name: "Explore affected communities" })
     .click();
-  await expect(page.locator(".insights-section h2")).toHaveText(
+  await expect(page.locator(".community-heading h2")).toHaveText(
     "Orleans Parish",
   );
-  await expect(page.locator(".score-value")).toContainText("94");
-  await expect(page.locator(".insights-section h2")).toBeVisible();
-  await expect(page.locator(".layer-controls button.selected")).toContainText(
-    "AI risk predictions",
-  );
+  await expect(page.locator(".risk-note")).toContainText("94");
+  await page.getByRole("button", { name: "Close details panel" }).click();
+  await expect(page.locator(".community-panel")).toHaveCount(0);
+  await page
+    .getByLabel("Disaster type", { exact: true })
+    .selectOption("Tornado");
   await expect(page.locator(".disaster-marker")).toHaveCount(0);
-  await page.getByRole("button", { name: "Unmet needs", exact: true }).click();
-  await expect(page.locator(".map-legend")).toContainText(
-    "EST. HOUSEHOLDS WITH NEEDS",
+  await expect(page.locator(".map-empty-state")).toContainText(
+    "No matching areas",
   );
-  await page
-    .getByRole("button", { name: "Available assistance", exact: true })
-    .click();
-  await expect(page.locator(".resource-marker")).toHaveCount(4);
-  await page
-    .locator(".resource-list")
-    .getByRole("button", { name: /Houston response hub/ })
-    .click();
-  await expect(page.locator(".resource-detail")).toContainText(
-    "Availability and location have not been verified",
-  );
-  const search = page.getByRole("combobox", {
-    name: "Search states or counties",
-  });
-  await search.fill("Harris");
-  await page.getByRole("option", { name: /Harris County Texas/ }).click();
-  await expect(page.locator(".insights-section h2")).toHaveText(
-    "Harris County",
-  );
-  await expect(page.locator(".score-value")).toContainText("87");
-  await page
-    .getByRole("button", { name: "AI risk predictions", exact: true })
-    .click();
-  await expect(page.locator(".map-canvas")).toHaveAttribute(
-    "data-boundaries-ready",
-    "true",
-  );
-  await page.screenshot({
-    path: "test-results/county-risk.png",
-    fullPage: true,
-  });
-  await search.fill("Vermont");
-  await page
-    .getByRole("option", { name: "Vermont State", exact: true })
-    .click();
-  await expect(page.locator(".empty-insights")).toContainText(
-    "No prediction for this area",
-  );
-  await page.getByRole("button", { name: "Data & settings" }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await expect(page.getByRole("dialog")).toContainText(
-    "No live disaster feed or trained model is connected",
-  );
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export snapshot" }).click();
-  const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe("sentinel-demo-snapshot.json");
   expect(errors).toEqual([]);
 });
 
-test("mobile map workspace remains usable without horizontal overflow", async ({
+test("needs filtering handles any/all matches and local assistance updates", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await ready(page);
+  await page
+    .getByLabel("Disaster type", { exact: true })
+    .selectOption("Hurricane");
+  const search = page.getByRole("combobox", {
+    name: "Search city, county, state, or ZIP code",
+  });
+  await search.fill("Florida");
+  await page
+    .getByRole("option", { name: "Florida State · United States", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Food Insecurity", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Shelter Shortages", exact: true })
+    .click();
+  await page.getByRole("button", { name: "All", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Find affected areas", exact: true })
+    .click();
+  await expect(page.locator(".result-summary")).toContainText(
+    "2 matching counties",
+  );
+  await expect(page.locator(".map-canvas")).toHaveAttribute(
+    "data-camera-moving",
+    "false",
+  );
+  await expect(page.locator(".map-canvas")).toHaveAttribute(
+    "data-map-idle",
+    "true",
+  );
+  await page.screenshot({
+    path: "test-results/geo-filtered.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Healthcare Access", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Medical Equipment", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Find affected areas", exact: true })
+    .click();
+  await expect(page.locator(".result-summary")).toContainText(
+    "0 matching counties",
+  );
+  await expect(page.locator(".map-empty-state")).toBeVisible();
+  await page.getByRole("button", { name: "Any", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Find affected areas", exact: true })
+    .click();
+  await expect(page.locator(".result-summary")).toContainText(
+    "2 matching counties",
+  );
+  await expect(page.locator(".map-empty-state")).toHaveCount(0);
+  await search.fill("33101");
+  await page.getByRole("option", { name: /Miami, Florida/ }).click();
+  await expect(page.locator(".community-heading h2")).toHaveText(
+    "Miami-Dade County",
+  );
+  await page
+    .locator(".request-summary")
+    .filter({ hasText: "Medication delivery" })
+    .click();
+  await page
+    .getByRole("combobox", { name: "Assignee for Medication delivery" })
+    .selectOption("Medical support team");
+  await expect(
+    page
+      .locator(".request-item")
+      .filter({ hasText: "Medication delivery" })
+      .locator(".request-status"),
+  ).toHaveText("Assigned");
+  await page
+    .getByRole("combobox", { name: "Status for Medication delivery" })
+    .selectOption("Resolved");
+  await expect(
+    page
+      .locator(".request-item")
+      .filter({ hasText: "Medication delivery" })
+      .locator(".request-status"),
+  ).toHaveText("Resolved");
+  await expect(page.locator(".coordination-summary")).toContainText(
+    "1Resolved",
+  );
+  await page.getByRole("button", { name: "Map layers", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Available assistance", exact: true })
+    .click();
+  await expect(page.locator(".resource-marker")).toHaveCount(1);
+  await page
+    .getByRole("button", { name: "About the data", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "Instrument Serif is bundled locally",
+  );
+  await page.keyboard.press("Escape");
+  const downloadPromise = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Export snapshot", exact: true })
+    .click();
+  expect((await downloadPromise).suggestedFilename()).toBe(
+    "geo-demo-snapshot.json",
+  );
+  expect(errors).toEqual([]);
+});
+
+test("mobile preserves map access and usable filters without horizontal overflow", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
-  await expect(page.locator(".disaster-marker")).toHaveCount(5, {
-    timeout: 45000,
+  await ready(page);
+  await expect(page.locator(".disaster-marker")).toHaveCount(5);
+  await page.screenshot({
+    path: "test-results/geo-mobile.png",
+    fullPage: true,
   });
-  await expect(page.getByRole("combobox")).toBeVisible();
-  await page
-    .getByRole("button", { name: "AI risk predictions", exact: true })
-    .click();
-  await expect(page.locator(".map-legend")).toContainText("PREDICTED RISK");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
-  await page.screenshot({ path: "test-results/mobile.png", fullPage: true });
+  await page
+    .getByRole("button", { name: "Toggle filters", exact: true })
+    .click();
+  await page
+    .getByLabel("Disaster type", { exact: true })
+    .selectOption("Wildfire");
+  await page
+    .getByRole("button", { name: "Find affected areas", exact: true })
+    .click();
+  await expect(page.locator(".sidebar-container")).not.toBeVisible();
+  await expect(page.locator(".result-summary")).toContainText(
+    "1 matching county",
+  );
+  await expect(page.locator(".disaster-marker")).toHaveCount(1);
+  await page
+    .getByRole("button", {
+      name: "Explore Sierra wildfire scenario",
+      exact: true,
+    })
+    .click();
+  await expect(page.locator(".disaster-popup")).toContainText(
+    "Sierra wildfire scenario",
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 });

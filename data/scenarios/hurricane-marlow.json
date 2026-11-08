@@ -1,0 +1,153 @@
+{
+  "id": "hurricane-marlow",
+  "name": "Hurricane Marlow (fictional)",
+  "simulated": true,
+  "issued": "2026-11-08T09:00:00-06:00",
+  "ends": "2026-11-09T12:00:00-06:00",
+  "note": "Real counties and Census data, fictional storm",
+  "alerts": [
+    {
+      "id": "simulated:marlow:hurricane",
+      "event": "SIMULATED: Hurricane Warning",
+      "severity": "Extreme",
+      "certainty": "Likely",
+      "urgency": "Expected",
+      "area": "Aransas County; Refugio County; San Patricio County; Nueces County; Kleberg County; Calhoun County",
+      "headline": "SIMULATED: Hurricane Warning for Hurricane Marlow (fictional). Exercise conditions only; this is not an official alert.",
+      "description": "SIMULATED: Hurricane Warning for Hurricane Marlow (fictional). Exercise conditions only; this is not an official alert.\n* WHAT...Fictional hurricane exercise involving coastal wind and surge hazards and inland flash flooding.\n* WHERE...Aransas, Refugio, San Patricio, Nueces, Kleberg, Calhoun.\n* WHEN...November 8, 2026 at 9:00 AM CST through November 9, 2026 at 12:00 PM CST.",
+      "instruction": "SIMULATED: Exercise planning only for Hurricane Marlow (fictional). Verify real conditions and follow actual local authorities. Do not deploy based on this scenario.",
+      "sent": "2026-11-08T09:00:00-06:00",
+      "effective": "2026-11-08T09:00:00-06:00",
+      "expires": "2026-11-09T12:00:00-06:00",
+      "ends": "2026-11-09T12:00:00-06:00",
+      "stateCodes": [
+        "TX"
+      ],
+      "countyIds": [
+        "48007",
+        "48391",
+        "48409",
+        "48355",
+        "48273",
+        "48057"
+      ],
+      "geometry": null,
+      "sourceUrl": "/api/public/scenarios/hurricane-marlow",
+      "simulated": true
+    },
+    {
+      "id": "simulated:marlow:surge",
+      "event": "SIMULATED: Storm Surge Warning",
+      "severity": "Extreme",
+      "certainty": "Likely",
+      "urgency": "Expected",
+      "area": "Aransas County; Nueces County; Kleberg County; San Patricio County; Calhoun County; Refugio County",
+      "headline": "SIMULATED: Storm Surge Warning for Hurricane Marlow (fictional). Exercise conditions only; this is not an official alert.",
+      "description": "SIMULATED: Storm Surge Warning for Hurricane Marlow (fictional). Exercise conditions only; this is not an official alert.\n* WHAT...Fictional hurricane exercise involving coastal wind and surge hazards and inland flash flooding.\n* WHERE...Aransas, Nueces, Kleberg, San Patricio, Calhoun, Refugio.\n* WHEN...November 8, 2026 at 9:00 AM CST through November 9, 2026 at 12:00 PM CST.",
+      "instruction": "SIMULATED: Exercise planning only for Hurricane Marlow (fictional). Verify real conditions and follow actual local authorities. Do not deploy based on this scenario.",
+      "sent": "2026-11-08T09:00:00-06:00",
+      "effective": "2026-11-08T09:00:00-06:00",
+      "expires": "2026-11-09T12:00:00-06:00",
+      "ends": "2026-11-09T12:00:00-06:00",
+      "stateCodes": [
+        "TX"
+      ],
+      "countyIds": [
+        "48007",
+        "48355",
+        "48273",
+        "48409",
+        "48057",
+        "48391"
+      ],
+      "geometry": null,
+      "sourceUrl": "/api/public/scenarios/hurricane-marlow",
+      "simulated": true
+    },
+    {
+      "id": "simulated:marlow:flood",
+      "event": "SIMULATED: Flash Flood Warning",
+      "severity": "Severe",
+      "certainty": "Observed",
+      "urgency": "Immediate",
+      "area": "Bee County; Goliad County; Live Oak County; Jim Wells County; Duval County; McMullen County; La Salle County; Webb County; Brooks County; Starr County; Zapata County; Jim Hogg County",
+      "headline": "SIMULATED: Flash Flood Warning for Hurricane Marlow (fictional). Exercise conditions only; this is not an official alert.",
+      "description": "SIMULATED: Flash Flood Warning for Hurricane Marlow (fictional). Exercise conditions only; this is not an official alert.\n* WHAT...Fictional hurricane exercise involving coastal wind and surge hazards and inland flash flooding.\n* WHERE...Bee, Goliad, Live Oak, Jim Wells, Duval, McMullen, La Salle, Webb, Brooks, Starr, Zapata, Jim Hogg.\n* WHEN...November 8, 2026 at 9:00 AM CST through November 9, 2026 at 12:00 PM CST.",
+      "instruction": "SIMULATED: Exercise planning only for Hurricane Marlow (fictional). Verify real conditions and follow actual local authorities. Do not deploy based on this scenario.",
+      "sent": "2026-11-08T09:00:00-06:00",
+      "effective": "2026-11-08T09:00:00-06:00",
+      "expires": "2026-11-09T12:00:00-06:00",
+      "ends": "2026-11-09T12:00:00-06:00",
+      "stateCodes": [
+        "TX"
+      ],
+      "countyIds": [
+        "48025",
+        "48175",
+        "48297",
+        "48249",
+        "48131",
+        "48311",
+        "48283",
+        "48479",
+        "48047",
+        "48427",
+        "48505",
+        "48247"
+      ],
+      "geometry": null,
+      "sourceUrl": "/api/public/scenarios/hurricane-marlow",
+      "simulated": true
+    }
+  ],
+  "shelters": [
+    {
+      "id": "simulated:marlow:shelter:a",
+      "title": "Simulated Shelter A",
+      "countyId": "48355",
+      "countyName": "Nueces County",
+      "capacity": 400,
+      "simulated": true,
+      "coordinates": {
+        "latitude": 27.735047386854454,
+        "longitude": -97.51620923006364
+      }
+    },
+    {
+      "id": "simulated:marlow:shelter:b",
+      "title": "Simulated Shelter B",
+      "countyId": "48249",
+      "countyName": "Jim Wells County",
+      "capacity": 250,
+      "simulated": true,
+      "coordinates": {
+        "latitude": 27.731259624025633,
+        "longitude": -98.08989304723691
+      }
+    },
+    {
+      "id": "simulated:marlow:shelter:c",
+      "title": "Simulated Shelter C",
+      "countyId": "48025",
+      "countyName": "Bee County",
+      "capacity": 180,
+      "simulated": true,
+      "coordinates": {
+        "latitude": 28.41735692082683,
+        "longitude": -97.741164936894
+      }
+    },
+    {
+      "id": "simulated:marlow:shelter:d",
+      "title": "Simulated Shelter D",
+      "countyId": "48479",
+      "countyName": "Webb County",
+      "capacity": 300,
+      "simulated": true,
+      "coordinates": {
+        "latitude": 27.76107977111774,
+        "longitude": -99.33157732745218
+      }
+    }
+  ]
+}

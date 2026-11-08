@@ -1,0 +1,12 @@
+{
+  "simulated": true,
+  "description": "Fictional zones for the GeoCast responder demonstration. These are not real residents, outages, or requests.",
+  "zones": [
+    {"id":"zone-1","name":"Zone 1 · Bayfront","population":4200,"pct65plus":30,"sviScore":0.7,"powerOff":true,"outageHours":18,"normalReportsPerHour":10,"reportsNow":12,"hoursSinceLastReport":0},
+    {"id":"zone-2","name":"Zone 2 · Pine Crossing","population":3100,"pct65plus":20,"sviScore":0.5,"powerOff":false,"outageHours":0,"normalReportsPerHour":8,"reportsNow":9,"hoursSinceLastReport":0},
+    {"id":"zone-3","name":"Zone 3 · Willow Bend","population":5600,"pct65plus":38,"sviScore":0.8,"powerOff":true,"outageHours":4,"normalReportsPerHour":10,"reportsNow":2,"hoursSinceLastReport":1},
+    {"id":"zone-4","name":"Zone 4 · Oak Terrace","population":2700,"pct65plus":18,"sviScore":0.45,"powerOff":true,"outageHours":2,"normalReportsPerHour":8,"reportsNow":6,"hoursSinceLastReport":1},
+    {"id":"zone-5","name":"Zone 5 · Central Market","population":6900,"pct65plus":12,"sviScore":0.3,"powerOff":false,"outageHours":0,"normalReportsPerHour":10,"reportsNow":25,"hoursSinceLastReport":0},
+    {"id":"zone-6","name":"Zone 6 · Meadow Park","population":1900,"pct65plus":15,"sviScore":0.35,"powerOff":false,"outageHours":0,"normalReportsPerHour":5,"reportsNow":5,"hoursSinceLastReport":0}
+  ]
+}

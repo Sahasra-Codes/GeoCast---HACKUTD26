@@ -4,7 +4,7 @@
   "simulated": true,
   "issued": "2026-11-08T09:00:00-06:00",
   "ends": "2026-11-09T12:00:00-06:00",
-  "note": "Real counties and Census data, fictional storm",
+  "note": "Real counties, Census data, facilities, and official guidance; fictional storm only",
   "alerts": [
     {
       "id": "simulated:marlow:hurricane",
@@ -100,54 +100,5 @@
       "simulated": true
     }
   ],
-  "shelters": [
-    {
-      "id": "simulated:marlow:shelter:a",
-      "title": "Simulated Shelter A",
-      "countyId": "48355",
-      "countyName": "Nueces County",
-      "capacity": 400,
-      "simulated": true,
-      "coordinates": {
-        "latitude": 27.735047386854454,
-        "longitude": -97.51620923006364
-      }
-    },
-    {
-      "id": "simulated:marlow:shelter:b",
-      "title": "Simulated Shelter B",
-      "countyId": "48249",
-      "countyName": "Jim Wells County",
-      "capacity": 250,
-      "simulated": true,
-      "coordinates": {
-        "latitude": 27.731259624025633,
-        "longitude": -98.08989304723691
-      }
-    },
-    {
-      "id": "simulated:marlow:shelter:c",
-      "title": "Simulated Shelter C",
-      "countyId": "48025",
-      "countyName": "Bee County",
-      "capacity": 180,
-      "simulated": true,
-      "coordinates": {
-        "latitude": 28.41735692082683,
-        "longitude": -97.741164936894
-      }
-    },
-    {
-      "id": "simulated:marlow:shelter:d",
-      "title": "Simulated Shelter D",
-      "countyId": "48479",
-      "countyName": "Webb County",
-      "capacity": 300,
-      "simulated": true,
-      "coordinates": {
-        "latitude": 27.76107977111774,
-        "longitude": -99.33157732745218
-      }
-    }
-  ]
+  "shelters": []
 }

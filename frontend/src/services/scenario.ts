@@ -1,5 +1,6 @@
 import {useSyncExternalStore} from 'react'
 export const scenarioId='hurricane-marlow'
+export const hurricaneSimulationFilter='simulation:hurricane-marlow'
 const key='geocast.scenario',event='geocast-scenario-change'
 export function scenarioEnabled(){try{return localStorage.getItem(key)===scenarioId}catch{return false}}
 export function setScenarioEnabled(enabled:boolean){try{if(enabled)localStorage.setItem(key,scenarioId);else localStorage.removeItem(key)}catch{/* session storage may be restricted */}window.dispatchEvent(new Event(event))}

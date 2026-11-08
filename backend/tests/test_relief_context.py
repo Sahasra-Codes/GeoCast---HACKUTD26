@@ -36,5 +36,5 @@ class ReliefContextTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(public,'get_json',AsyncMock(return_value=[])),patch.object(public,'boundaries',AsyncMock(return_value=source({'features':[self.feature]}))):
             with self.assertRaises(HTTPException) as error:
                 await relief.relief_context('Unknown city','TX','')
-        self.assertEqual(error.exception.status_code,503)
+        self.assertEqual(error.exception.status_code,422)
         self.assertIn('City not found',str(error.exception.detail))

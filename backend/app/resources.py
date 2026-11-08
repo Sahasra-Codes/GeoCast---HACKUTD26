@@ -16,6 +16,8 @@ router = APIRouter(prefix="/api/resources", tags=["Resources"])
 Category = Literal["shelter", "food", "medical", "transportation", "financial", "safety"]
 RED_CROSS = "https://www.redcross.org/get-help/disaster-relief-and-recovery-services/find-an-open-shelter.html"
 GUIDES = [
+    {"title": "Hurricane safety", "description": "Official hurricane preparedness and safety guidance.", "url": "https://www.weather.gov/safety/hurricane"},
+    {"title": "Flood safety", "description": "Official flood preparedness and safety guidance.", "url": "https://www.weather.gov/safety/flood"},
     {"title": "Build an emergency kit", "description": "Supplies and planning for your household.", "url": "https://www.ready.gov/kit"},
     {"title": "Make a plan", "description": "Communication, evacuation, and household planning.", "url": "https://www.ready.gov/plan"},
     {"title": "Recover after a disaster", "description": "Official recovery and returning-home guidance.", "url": "https://www.ready.gov/recovering-disaster"},
@@ -59,6 +61,46 @@ async def open_shelters():
         'status': snapshot['status'], 'items': items,
         'note': ('No open shelters reported' if snapshot['status'] == 'available' and not items else
                  snapshot.get('error') or 'Currently open shelters reported to FEMA. Confirm access before traveling.')}
+
+async def area_open_shelters(state, county, location):
+    """Real reported-open shelters only, even when a storm exercise is enabled."""
+    center = None
+    if location:
+        try:
+            lat, lon = map(float, location.split(','))
+            if not (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180): raise ValueError()
+            center = (lat, lon)
+        except (ValueError, TypeError):
+            raise HTTPException(422, 'Enter a valid location for the shelter search.') from None
+    elif county:
+        from . import public_data as public
+        from .scenarios import centroid
+        boundary = await public.boundaries(state)
+        feature = next((f for f in (boundary.get('data') or {}).get('features', []) if str(f.get('id') or f.get('properties', {}).get('GEOID')) == county), None)
+        if feature is None:
+            raise HTTPException(503, 'County location could not load. Please retry.')
+        point = centroid(feature['geometry'])
+        center = (point['latitude'], point['longitude'])
+    result = await open_shelters()
+    items = []
+    for item in result['items']:
+        if item.get('simulated'): continue
+        if center:
+            point = item.get('coordinates') or {}
+            lat, lon = point.get('latitude'), point.get('longitude')
+            if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)): continue
+            rad = math.pi/180
+            h = math.sin((lat-center[0])*rad/2)**2 + math.cos(lat*rad)*math.cos(center[0]*rad)*math.sin((lon-center[1])*rad/2)**2
+            miles = 3958.7613*2*math.asin(math.sqrt(min(1, max(0, h))))
+            if miles <= 50: items.append({**item, 'distanceMiles': round(miles, 1)})
+        elif str(item.get('state') or '').strip().upper() == state:
+            items.append(dict(item))
+    if center: items.sort(key=lambda item: item['distanceMiles'])
+    scope = 'within 50 miles of the selected county center' if center else 'in '+state
+    return {**result, 'items':items, 'directoryUrl':RED_CROSS,
+        'note':('Real shelters reported open '+scope+'. Confirm availability before traveling.' if result['status']=='available' else 'Live shelter information could not load. Check the official shelter directory.'),
+        'emptyMessage':'No open shelters are currently reported '+scope+'. Check the official directory for updates.'}
+
 
 def mapped_facility(element):
     """Expose actual facility details, never an internal OSM tag as a name."""
@@ -114,7 +156,7 @@ async def query_overpass(client, query):
             failures.append("timeout")
         except (httpx.HTTPError, ValueError, TypeError):
             failures.append("connection or response error")
-    raise OverpassUnavailable("OpenStreetMap search is temporarily unavailable (" + ", ".join(failures) + "). No API key is needed. Retry shortly, or use the OpenStreetMap search link below.")
+    raise OverpassUnavailable("Data temporarily unavailable. Please try again in 5 minutes.")
 
 @router.get("/{category}")
 async def resources(category: Category, location: str = Query("", max_length=120), state: str = Query("TX", pattern="^[A-Z]{2}$"), county: str = Query("", pattern="^([0-9]{5})?$"), scenario: str = ""):
@@ -122,24 +164,12 @@ async def resources(category: Category, location: str = Query("", max_length=120
         raise HTTPException(422, "Choose a supported US state.")
     if county and (state not in STATES or not county.startswith(STATES[state]) or county.endswith("000")):
         raise HTTPException(422, "Choose a county within the selected state.")
-    from .scenarios import enabled, scenario_resources, scenario_context, county_ids
-    if enabled(scenario) and state == 'TX':
-        if category in ('shelter', 'food', 'medical'):
-            result = scenario_resources()[category]
-            if category == 'shelter' and county:
-                result['items'] = [item for item in result['items'] if item.get('countyId') == county]
-                result['note'] += ' Showing shelters explicitly linked to this county; real records without county links are not included.'
-            return result
-        if category == 'financial' and county in county_ids():
-            return scenario_context(county)['resources']['financial']
-        if category == 'safety' and county in county_ids():
-            context = scenario_context(county)
-            return {'source':'NWS + Hurricane Marlow (fictional)','retrievedAt':context['generatedAt'],'status':'available','simulated':True,'note':context['scopeNote'],
-                'items':[{'title':a['event'],'description':a['headline'],'details':a['instruction'],'url':a['sourceUrl'],'simulated':a.get('simulated',False)} for a in context['rankedLiveAlerts']]}
+    if category == 'shelter':
+        return await area_open_shelters(state, county, location)
+    from .scenarios import enabled
+    enabled(scenario)  # Storm simulation never replaces public resources or official guidance.
     source = {"shelter": "American Red Cross", "food": "OpenStreetMap / Overpass", "medical": "OpenStreetMap / Overpass", "transportation": "DriveTexas / TxDOT", "financial": "OpenFEMA", "safety": "National Weather Service + Ready.gov"}[category]
     result = {"source": source, "retrievedAt": datetime.now(timezone.utc).isoformat(), "items": [], "status": "available", "note": ""}
-    if category == "shelter":
-        return {**result, "items": [{"title": "Find an open Red Cross shelter", "description": "Search official shelter listings and services in the Red Cross directory.", "url": RED_CROSS}], "note": "Official directory link. Live API access is not guaranteed; no live shelter status or bed availability is claimed."}
     if category == "transportation":
         if state != "TX":
             return {**result, "status": "unsupported_region", "note": "DriveTexas covers Texas road conditions only. Select TX."}
@@ -186,7 +216,7 @@ async def resources(category: Category, location: str = Query("", max_length=120
                         features = [f for f in features if any(str(code).endswith(county) for code in f.get("properties", {}).get("geocode", {}).get("SAME", []))]
                     alerts = [{"title": e.get("properties", {}).get("event", "Weather alert"), "description": e.get("properties", {}).get("headline", ""), "details": e.get("properties", {}).get("instruction") or "Read the issuing office's alert for instructions.", "url": "https://www.weather.gov/alerts"} for e in features[:20]]
                     result["items"] = alerts + result["items"]
-                    result["note"] = f"{len(features)} active NWS alerts matched for {county or state}; showing up to 20. County filtering uses NWS SAME county codes and may omit zone-only alerts; check weather.gov for complete warnings. Ready.gov guides apply generally."
+                    result["note"] = f"{len(features)} active NWS alerts matched for {county or state}; showing up to 20. County filtering uses NWS SAME county codes and may omit zone-only alerts; check weather.gov for complete warnings. Official safety guides apply generally."
                 except (httpx.HTTPError, ValueError, KeyError, TypeError):
                     result["status"] = "partial"
                     result["note"] = "Live NWS alerts are unavailable. Ready.gov preparedness links remain available; this does not mean there are no active warnings."

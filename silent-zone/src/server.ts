@@ -1,3 +1,4 @@
+import {generalReliefPlan} from './generalRelief.ts';
 import {existsSync} from 'node:fs';
 import {loadEnvFile} from 'node:process';
 import {createReliefPlan,getCachedMarlowPlan,ReliefError} from './relief.ts';
@@ -30,7 +31,7 @@ export function createPriorityServer(store: ReturnType<typeof createStore>) {
       if (req.method === 'POST' && path === '/api/briefing') return send(200, await generateBriefing(store.priority()));
       if (req.method === 'GET' && /^\/api\/relief\/scenario-plans\/48[0-9]{3}$/.test(path)) {
         const plan=await getCachedMarlowPlan(path.split('/').pop()!);
-        return plan?send(200,plan):send(404,{error:'Cached scenario plan is unavailable. Use Regenerate to create it.'});
+        return send(200,plan||generalReliefPlan({city:'Selected county',state:'TX',county:path.split('/').pop()!,simulated:true}));
       }
       if (req.method === 'POST' && path === '/api/relief/plan') {
         const input = await body(req);

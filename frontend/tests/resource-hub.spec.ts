@@ -19,7 +19,7 @@ test.beforeEach(async({page})=>{
 test('copy, functional search, county defaults and sourced results work without category tabs',async({page})=>{
  await mount(page,{state:'TX',countyId:'48113'},{state:'CA',countyId:'06037',at:Date.now()})
  await expect(page.getByText('Public resources for the selected state or county, with sources and retrieval times.',{exact:true})).toBeVisible()
- await expect(page.getByRole('button',{name:'Emergency Shelters Shelters in the selected county',exact:true})).toBeVisible()
+ await expect(page.getByRole('button',{name:'Emergency Shelters Real shelters near the selected area',exact:true})).toBeVisible()
  await expect(page.getByRole('button',{name:'FEMA disaster declarations Recent declarations for the county (not an eligibility check)',exact:true})).toBeVisible()
  await expect(page.locator('.resource-hub-tabs')).toHaveCount(0)
  await page.getByRole('button',{name:'Safety Guides Official county alerts and safety guidance',exact:true}).click()
@@ -40,19 +40,19 @@ test('copy, functional search, county defaults and sourced results work without 
 })
 test('top-ranked county is used when Insights has no selected county',async({page})=>{
  await mount(page,{state:'TX',countyId:''},{state:'TX',countyId:'48201',at:Date.now()})
- await page.getByRole('button',{name:'Emergency Shelters Shelters in the selected county',exact:true}).click()
+ await page.getByRole('button',{name:'Emergency Shelters Real shelters near the selected area',exact:true}).click()
  await expect(page.getByLabel('Resource state',{exact:true})).toHaveValue('TX')
  await expect(page.getByLabel('Resource county',{exact:true})).toHaveValue('48201')
 })
 test('fallback follows active alert order instead of alphabetical state or county',async({page})=>{
  await mount(page)
- await page.getByRole('button',{name:'Emergency Shelters Shelters in the selected county',exact:true}).click()
+ await page.getByRole('button',{name:'Emergency Shelters Real shelters near the selected area',exact:true}).click()
  await expect(page.getByLabel('Resource state',{exact:true})).toHaveValue('CA')
  await expect(page.getByLabel('Resource county',{exact:true})).toHaveValue('06037')
 })
 test('stale ranking cannot override a current alert fallback',async({page})=>{
  await mount(page,{state:'TX',countyId:''},{state:'TX',countyId:'48201',at:Date.now()-600000})
- await page.getByRole('button',{name:'Emergency Shelters Shelters in the selected county',exact:true}).click()
+ await page.getByRole('button',{name:'Emergency Shelters Real shelters near the selected area',exact:true}).click()
  await expect(page.getByLabel('Resource county',{exact:true})).toHaveValue('06037')
 })
 
@@ -78,7 +78,7 @@ test('food bank outage is explicit and Retry search loads recovered results',asy
  await mount(page,{state:'TX',countyId:'48113'})
  await page.getByRole('button',{name:'Food banks Food banks mapped in OpenStreetMap',exact:true}).click()
  await page.getByRole('button',{name:'Find resources',exact:true}).click()
- await expect(page.getByText('OpenStreetMap search is temporarily unavailable (timeout).',{exact:true})).toBeVisible()
+ await expect(page.getByText('Data temporarily unavailable. Please try again in 5 minutes.',{exact:true})).toBeVisible()
  await page.getByRole('button',{name:'Retry search',exact:true}).click()
  await expect(page.getByRole('heading',{name:'Food bank fixture',exact:true})).toBeVisible()
  expect(calls).toBe(2)
@@ -94,4 +94,13 @@ test('mapped facilities expose usable contact links without empty hours',async({
  await expect(page.getByRole('link',{name:'Visit facility website',exact:true})).toHaveAttribute('href','https://example.org')
  await expect(page.getByRole('link',{name:'View on OpenStreetMap',exact:true})).toHaveAttribute('href','https://www.openstreetmap.org/way/2')
  await expect(page.getByText('Hours: not reported',{exact:true})).toHaveCount(0)
+})
+
+test('food-bank outage retains official general resource guidance',async({page})=>{
+ await page.route('**/api/resources/food?*',route=>route.fulfill({status:503,json:{detail:'Source unavailable'}}))
+ await mount(page,{state:'TX',countyId:'48113'})
+ await page.getByRole('button',{name:'Food banks Food banks mapped in OpenStreetMap',exact:true}).click()
+ await page.getByRole('button',{name:'Find resources',exact:true}).click()
+ await expect(page.getByRole('complementary',{name:'General guidance',exact:true})).toBeVisible()
+ await expect(page.getByRole('link',{name:'Feeding America food bank locator',exact:true})).toHaveAttribute('href','https://www.feedingamerica.org/find-your-local-foodbank')
 })

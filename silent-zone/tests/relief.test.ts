@@ -71,3 +71,12 @@ test('all Marlow counties load labeled pre-generated plans with no Gemini reques
  const plan=await createReliefPlan({city:'Scenario county',state:'TX',county:'48131',scenario:'hurricane-marlow'},{alerts:[],generate:async()=>{throw new Error('Cache must avoid Gemini')}});
  assert.equal(plan.cached,true);assert.equal(plan.location.countyId,'48131');
 });
+
+test('Gemini outage returns general guidance retaining real known Census data without fake local facts',async()=>{
+ const plan=await createReliefPlan({city:'Dallas',state:'TX'},{alerts:[],context:{...locationContext,insights:{census:{data:{population:1000,pctNoVehicle:10}}}},generate:async()=>{throw new Error('provider unavailable')}})
+ assert.equal(plan.source,'general_guidance');assert.equal(plan.fallback,true);assert.match(plan.text,/Total population: 1,000/);assert.match(plan.text,/Households without a vehicle: 10.0%/);assert.match(plan.text,/not confirmation that a facility is open/)
+})
+test('context-service outage returns general guidance with no invented population or alerts',async()=>{
+ const original=globalThis.fetch;globalThis.fetch=async()=>{throw new Error('offline')}
+ try{const plan=await createReliefPlan({city:'Dallas',state:'TX'});assert.equal(plan.source,'general_guidance');assert.deepEqual(plan.alerts,[]);assert.ok(!plan.text.includes('Total population:'));assert.match(plan.text,/require verification/)}finally{globalThis.fetch=original}
+})

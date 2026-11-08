@@ -13,6 +13,7 @@ export function isCurrentAlert(alert: PublicAlert, now: number) {
   return true
 }
 export function matchesAlertType(alert: PublicAlert, filter: string) {
+  if(filter==='simulation:hurricane-marlow')return !!alert.simulated&&alert.id.startsWith('simulated:marlow:')
   if (filter.startsWith('event:')) return alert.event === filter.slice(6)
   if (filter.startsWith('alert:')) return alert.id === filter.slice(6)
   return filter === 'all' || classifyHazard(alert.event) === filter

@@ -1,3 +1,4 @@
+import GeneralGuidance from './GeneralGuidance'
 import {scenarioUrl,useScenario} from '../services/scenario'
 import {SimulatedBadge} from './ScenarioControl'
 import {readResourceCounty,countyState} from '../services/resourceDefaults'
@@ -10,14 +11,14 @@ import { getGeography } from "../services/api";
 import { stateOptions } from "../publicDataTypes";
 import type { Geography } from "../types";
 const categories = [
-  { id: "shelter", label: "Shelter", title: "Emergency Shelters", description: "Shelters in the selected county", icon: House },
+  { id: "shelter", label: "Shelter", title: "Emergency Shelters", description: "Real shelters near the selected area", icon: House },
   { id: "food", label: "Food & Water", title: "Food banks", description: "Food banks mapped in OpenStreetMap", icon: Utensils },
   { id: "medical", label: "Medical", title: "Medical Support", description: "Hospitals mapped in OpenStreetMap", icon: Cross },
   { id: "financial", label: "Financial", title: "FEMA disaster declarations", description: "Recent declarations for the county (not an eligibility check)", icon: Layers },
   { id: "safety", label: "Safety", title: "Safety Guides", description: "Official county alerts and safety guidance", icon: ShieldCheck },
 ];
-type Item = { simulated?: boolean; capacity?: number; title: string; description: string; details?: string; status?: string; phone?: string; website?: string; url?: string; attributions?: { provider?: string; providerUri?: string }[] };
-type Results = { source: string; status: string; retrievedAt: string; note: string; items: Item[] };
+type Item = { distanceMiles?: number; simulated?: boolean; capacity?: number; title: string; description: string; details?: string; status?: string; phone?: string; website?: string; url?: string; attributions?: { provider?: string; providerUri?: string }[] };
+type Results = { emptyMessage?: string; directoryUrl?: string; source: string; status: string; retrievedAt: string; note: string; items: Item[] };
 export default function ResourcesPage() {
   const simulated=useScenario()
   const [query, setQuery] = useState("");
@@ -51,7 +52,7 @@ export default function ResourcesPage() {
     setLoading(true); setError(""); setResults(undefined);
     fetch(scenarioUrl(`/api/resources/${selected}?${new URLSearchParams({ location: submitted.location, state: submitted.state, county: submitted.county })}`), { signal: controller.signal })
       .then(async response => { if (!response.ok) { const data = await response.json().catch(() => null); throw new Error(typeof data?.detail === "string" ? data.detail : "Resources could not be loaded. Check that FastAPI is running and try again."); } return response.json(); })
-      .then(data => { if (!controller.signal.aborted) setResults(data); })
+      .then(data => { if (!controller.signal.aborted) setResults({...data,note:data.status==='unavailable'?'Data temporarily unavailable. Please try again in 5 minutes.':data.note}); })
       .catch(err => { if (!controller.signal.aborted) setError(err.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
@@ -73,9 +74,9 @@ export default function ResourcesPage() {
         <button type="submit" disabled={loading || !state}>Find resources<ArrowRight size={16} /></button>
       </form>
       {geographyError && <p role="alert">{geographyError}</p>}
-      {loading && <p role="status">{selected==='food'||selected==='medical'?'Searching OpenStreetMap. Waiting for the public map service...':'Checking the source...'}</p>}{error && <p role="alert">{error}</p>}
+      {loading && <p role="status">{selected==='food'||selected==='medical'?'Searching OpenStreetMap. Waiting for the public map service...':'Checking the source...'}</p>}{error && <><p role="alert">{error}</p><GeneralGuidance category={selected}/></>}
       {!submitted && <p>Select a state and optionally a county, then click Find resources.</p>}
-      {results && <><div className="resource-source"><strong>{results.source}</strong><span>Retrieved {new Date(results.retrievedAt).toLocaleString()}</span></div><p className={`resource-source-note ${results.status !== "available" ? "warning" : ""}`} role="status">{results.note}</p>{results.status==='unavailable'&&<button className="resource-retry" type="button" onClick={()=>setSubmitted(old=>old?{...old,retry:Date.now()}:old)}>Retry search</button>}<div className="resource-result-grid">{results.items.filter(item=>!item.simulated||simulated).map((item, i) => <article key={i}><div>{item.simulated&&<SimulatedBadge/>}<h3>{item.title}</h3>{item.status && <span className="resource-status">{item.status}</span>}</div>{item.description && <p>{item.description}</p>}{item.phone && <p><a href={`tel:${item.phone.replace(/[^+0-9,;]/g, "")}`}>Call {item.phone}</a></p>}{item.website && /^https?:\/\//i.test(item.website) && <p><a href={item.website} target="_blank" rel="noreferrer">Visit facility website<ExternalLink size={14} /></a></p>}{item.details && <p>{item.details}</p>}{item.url && /^https:\/\//.test(item.url) && <a href={item.url} target="_blank" rel="noreferrer">{results.source.includes("OpenStreetMap") ? "View on OpenStreetMap" : "Open official source"}<ExternalLink size={14} /></a>}{item.attributions?.map((a, j) => <small key={j}>{a.provider}</small>)}</article>)}</div>{results.status === "available" && !results.items.length && <p>No records returned for this search. This does not confirm that no resources exist.</p>}</>}
+      {results && <>{(results.status!=='available'||!results.items.length)&&<GeneralGuidance category={selected}/>}<div className="resource-source"><strong>{results.source}</strong><span>Retrieved {new Date(results.retrievedAt).toLocaleString()}</span></div><p className={`resource-source-note ${results.status !== "available" ? "warning" : ""}`} role="status">{results.note}</p>{results.directoryUrl&&/^https:\/\//.test(results.directoryUrl)&&<p><a href={results.directoryUrl} target="_blank" rel="noreferrer">Check the official shelter directory<ExternalLink size={14}/></a></p>}{results.status==='unavailable'&&<button className="resource-retry" type="button" onClick={()=>setSubmitted(old=>old?{...old,retry:Date.now()}:old)}>Retry search</button>}<div className="resource-result-grid">{results.items.filter(item=>selected==='shelter'?!item.simulated:!item.simulated||simulated).map((item, i) => <article key={i}><div>{item.simulated&&<SimulatedBadge/>}<h3>{item.title}</h3>{item.status && <span className="resource-status">{item.status}</span>}</div>{item.description && <p>{item.description}</p>}{item.phone && <p><a href={`tel:${item.phone.replace(/[^+0-9,;]/g, "")}`}>Call {item.phone}</a></p>}{item.website && /^https?:\/\//i.test(item.website) && <p><a href={item.website} target="_blank" rel="noreferrer">Visit facility website<ExternalLink size={14} /></a></p>}{item.details && <p>{item.details}</p>}{item.distanceMiles!=null&&<p>{item.distanceMiles.toFixed(1)} miles from the selected county center</p>}{item.url && /^https:\/\//.test(item.url) && <a href={item.url} target="_blank" rel="noreferrer">{results.source.includes("OpenStreetMap") ? "View on OpenStreetMap" : "Open official source"}<ExternalLink size={14} /></a>}{item.attributions?.map((a, j) => <small key={j}>{a.provider}</small>)}</article>)}</div>{results.status === "available" && !results.items.length && <p>{results.emptyMessage||'No records returned for this search. This does not confirm that no resources exist.'}</p>}</>}
     </section>}
     <p className="resource-hub-footnote"><ShieldCheck size={15} />Source-reported information. Confirm hours, access, and availability before traveling.</p>
   </main>;

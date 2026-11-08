@@ -1,3 +1,4 @@
+import {generalPlan} from '../services/generalGuidance'
 import ReliefPlanText from './ReliefPlanText'
 import {scenarioEnabled,scenarioId,useScenario} from '../services/scenario'
 import {SimulatedBadge} from './ScenarioControl'
@@ -9,7 +10,7 @@ import type {Geography} from '../types'
 import './ReliefPage.css'
 
 type Source={name?:string;source?:string;retrievedAt?:string;status:string;note?:string;error?:string}
-type Plan={simulated?:boolean;cached?:boolean;id:string;title:string;text:string;generatedAt:string;draft:boolean;model:string;alerts:{id:string;event:string;sourceUrl:string}[];location?:{city:string;state:string;countyId?:string;countyName:string};evidence?:{scopeNote:string;insights:Record<string,Source>;resources:Record<string,Source>}}
+type Plan={simulated?:boolean;fallback?:boolean;id:string;title:string;text:string;generatedAt:string;draft:boolean;model:string;alerts:{id:string;event:string;sourceUrl:string}[];location?:{city:string;state:string;countyId?:string;countyName:string};evidence?:{scopeNote:string;insights:Record<string,Source>;resources:Record<string,Source>}}
 export default function ReliefPage({reportCounty}:{reportCounty?:string}={}){
  const simulated=useScenario()
  const [city,setCity]=useState(''),[state,setState]=useState(()=>{const code=new URLSearchParams(window.location.search).get('state');return stateOptions.some(s=>s.code===code)?code!:''}),[county,setCounty]=useState(()=>new URLSearchParams(window.location.search).get('county')||'')
@@ -19,7 +20,7 @@ export default function ReliefPage({reportCounty}:{reportCounty?:string}={}){
  useEffect(()=>{
   if(!reportCounty||!simulated)return
   const controller=new AbortController();setGenerating(true);setError('')
-  fetch('/api/relief/scenario-plans/'+reportCounty,{signal:controller.signal}).then(async response=>{const data=await response.json();if(!response.ok)throw new Error(data.error||'Cached plan unavailable. Use Regenerate.');if(!controller.signal.aborted)setPlan(data)}).catch(error=>{if(!controller.signal.aborted)setError(error.message)}).finally(()=>{if(!controller.signal.aborted)setGenerating(false)})
+  fetch('/api/relief/scenario-plans/'+reportCounty,{signal:controller.signal}).then(async response=>{const data=await response.json();if(!response.ok)throw new Error(data.error||'Plan unavailable. Use Regenerate.');if(!controller.signal.aborted)setPlan(data)}).catch(()=>{if(!controller.signal.aborted){setPlan(generalPlan('Selected county','TX',reportCounty,true));setError('')}}).finally(()=>{if(!controller.signal.aborted)setGenerating(false)})
   return()=>controller.abort()
  },[reportCounty,simulated])
  const fips=stateOptions.find(s=>s.code===state)?.fips
@@ -27,14 +28,15 @@ export default function ReliefPage({reportCounty}:{reportCounty?:string}={}){
  async function generate(regenerate=false){
   if(generating||(!reportCounty&&(!city.trim()||!state)))return
   setGenerating(true);setError('');setPlan(undefined)
+  let needsCorrection=false
   try{
    const response=await fetch('/api/relief/plan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({city:reportCounty?(plan?.location?.city||'Selected scenario county'):city.trim(),state:reportCounty?'TX':state,county:reportCounty||county,...(simulated?{scenario:scenarioId,regenerate}:{})}),signal:AbortSignal.timeout(240000)})
    const value=await response.json()
-   if(!response.ok)throw new Error(value.error||'The relief plan could not be generated. Please retry.')
+   if(!response.ok){needsCorrection=response.status<500&&response.status!==429;throw new Error(value.error||'The relief plan could not be generated. Please retry.')}
    if(scenarioEnabled()!==simulated)return
    setPlan(value)
    requestAnimationFrame(()=>document.getElementById('relief-plan-result')?.scrollIntoView({behavior:'smooth',block:'start'}))
-  }catch(error){setError(error instanceof Error?error.message:'The relief plan could not be generated. Please retry.')}
+  }catch(error){if(needsCorrection){setError(error instanceof Error?error.message:'Check your location and retry.')}else if(scenarioEnabled()===simulated){setPlan(generalPlan(reportCounty?(plan?.location?.city||'Selected county'):city.trim(),reportCounty?'TX':state,reportCounty||county,simulated));setError('')}}
   finally{setGenerating(false)}
  }
  function download(){
@@ -54,9 +56,9 @@ export default function ReliefPage({reportCounty}:{reportCounty?:string}={}){
    {countyError&&<p role="status">{countyError}</p>}{generating&&<p role="status">Loading local Insights and Resources, then asking Gemini to write your plan. This may take a few minutes.</p>}{error&&<p role="alert" className="relief-error">{error}</p>}
    <small>AI-generated draft for human review. Confirm local conditions and resource availability before acting.</small>
   </section>}
-  {reportCounty&&!simulated&&<p role="status">Enable Simulate major event to view this fictional report.</p>}
+  {reportCounty&&!simulated&&<p role="status">Choose Hurricane (simulation) in the Map disaster filter to view this report.</p>}
   {reportCounty&&simulated&&error&&<p role="alert">{error}<button onClick={()=>void generate(true)}>Regenerate</button></p>}
   {reportCounty&&simulated&&generating&&<p role="status">Loading simulated relief report...</p>}
-  {plan&&(!plan.simulated||simulated)&&<section id="relief-plan-result" className="relief-plan-result" aria-label="Generated relief plan"><div className="relief-plan-header"><div>{plan.simulated&&<SimulatedBadge/>}<span>Gemini draft{plan.cached?' - cached county exercise plan':''}</span><h2>{plan.title}</h2><p>{new Date(plan.generatedAt).toLocaleString()}</p></div><button onClick={download}><Download size={17}/>Download plan</button></div><ReliefPlanText text={plan.text}/><div className="relief-plan-actions"><button type="button" disabled={generating} onClick={()=>void generate(true)}>Regenerate</button>{plan.simulated&&!reportCounty&&<p><a href={'/reports/relief?county='+(plan.location?.countyId||county||'')}>Open simulated report</a></p>}</div><details><summary>Sources used</summary>{plan.evidence?.scopeNote&&<p>{plan.evidence.scopeNote}</p>}{sources.map((source,index)=><p key={index}><strong>{source.name||source.source}</strong> - {source.status}{source.retrievedAt?` / Retrieved ${new Date(source.retrievedAt).toLocaleString()}`:''}{source.note||source.error?<><br/>{source.note||source.error}</>:null}</p>)}{plan.alerts.map(alert=><p key={alert.id}>{alert.event}{/^https:\/\//.test(alert.sourceUrl)&&<> - <a href={alert.sourceUrl} target="_blank" rel="noreferrer">Official alert</a></>}</p>)}</details></section>}
+  {plan&&(!plan.simulated||simulated)&&<section id="relief-plan-result" className="relief-plan-result" aria-label="Generated relief plan"><div className="relief-plan-header"><div>{plan.simulated&&<SimulatedBadge/>}{plan.fallback&&<span className="general-guidance-label">General guidance</span>}<h2>{plan.title}</h2><p>{new Date(plan.generatedAt).toLocaleString()}</p></div><button onClick={download}><Download size={17}/>Download plan</button></div><ReliefPlanText text={plan.text}/><div className="relief-plan-actions"><button type="button" disabled={generating} onClick={()=>void generate(true)}>Regenerate</button>{plan.simulated&&!reportCounty&&<p><a href={'/reports/relief?county='+(plan.location?.countyId||county||'')}>Open simulated report</a></p>}</div><details><summary>Sources used</summary>{plan.evidence?.scopeNote&&<p>{plan.evidence.scopeNote}</p>}{sources.map((source,index)=><p key={index}><strong>{source.name||source.source}</strong> - {source.status}{source.retrievedAt?` / Retrieved ${new Date(source.retrievedAt).toLocaleString()}`:''}{source.note||source.error?<><br/>{source.status==='unavailable'?'Data temporarily unavailable. Please try again in 5 minutes.':source.note||source.error}</>:null}</p>)}{plan.alerts.map(alert=><p key={alert.id}>{alert.event}{/^https:\/\//.test(alert.sourceUrl)&&<> - <a href={alert.sourceUrl} target="_blank" rel="noreferrer">Official alert</a></>}</p>)}</details></section>}
  </main>
 }

@@ -40,8 +40,16 @@ test('Relief waits for source loading and Gemini, and permits an explicit county
  await expect(page.getByRole('status')).toContainText('Loading local Insights and Resources')
  await expect(page.getByRole('button',{name:'Creating your plan...',exact:true})).toBeDisabled()
  release()
- await expect(page.getByRole('alert')).toContainText('Gemini unavailable')
+ await expect(page.locator('.general-guidance-label')).toContainText('General guidance')
  expect(input).toEqual({city:'Dallas',state:'TX',county:'48113'})
- await expect(page.getByRole('region',{name:'Generated relief plan'})).toHaveCount(0)
+ await expect(page.getByRole('region',{name:'Generated relief plan'})).toContainText('Local information or plan generation could not load')
  await expect(page.getByRole('button',{name:'Generate relief plan',exact:true})).toBeEnabled()
+})
+
+test('location validation errors still ask for correction instead of inventing a local plan',async({page})=>{
+ await page.route('**/api/relief/plan',route=>route.fulfill({status:422,json:{error:'City not found. Check the city and state.'}}))
+ await openRelief(page);await page.getByLabel('City',{exact:true}).fill('Unknown city');await page.getByLabel('State',{exact:true}).selectOption('TX')
+ await page.getByRole('button',{name:'Generate relief plan',exact:true}).click()
+ await expect(page.getByRole('alert')).toContainText('City not found')
+ await expect(page.getByRole('region',{name:'Generated relief plan'})).toHaveCount(0)
 })

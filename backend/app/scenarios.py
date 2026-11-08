@@ -45,13 +45,6 @@ def centroid(geometry):
     if total <= 0: raise ValueError('County centroid unavailable.')
     return {'latitude': ysum/total, 'longitude': xsum/total}
 
-def simulated_shelters():
-    features = {str(f['id']): f for f in snapshot()['state']['sources']['boundaries']['data']['features']}
-    return [{**deepcopy(item), 'coordinates': centroid(features[item['countyId']]['geometry']),
-        'description': f"SIMULATED: {item['countyName']}; fictional capacity {item['capacity']}. Not an operating shelter.",
-        'details': f"Fictional capacity: {item['capacity']} people. Exercise only.",
-        'url': '/api/public/scenarios/hurricane-marlow'} for item in definition()['shelters']]
-
 def merge_alerts(source):
     result = deepcopy(source)
     real = result.get('data') or {'alerts': [], 'updated': None, 'truncated': False}
@@ -68,12 +61,10 @@ def scenario_state(state):
     return result
 
 def scenario_resources():
+    # Only the weather hazard is fictional. Resources and their availability stay real.
     results = deepcopy(snapshot()['resources'])
-    real = results.get('shelter') or {'source':'FEMA Open Shelters','retrievedAt':snapshot()['capturedAt'],'status':'unavailable','items':[],'note':'Real shelter snapshot unavailable.'}
-    results['shelter'] = {**real, 'realSourceStatus':real['status'], 'status':'available',
-        'source':real['source']+' + Hurricane Marlow fictional shelters',
-        'items':real['items']+simulated_shelters(), 'simulated':True,
-        'note':real['note']+' Four SIMULATED shelters added at real county centroids; capacities are fictional.'}
+    for result in results.values():
+        result['items'] = [item for item in result['items'] if not item.get('simulated')]
     return results
 
 def scenario_context(county, city=None):
@@ -83,6 +74,21 @@ def scenario_context(county, city=None):
     feature = next(f for f in saved['state']['sources']['boundaries']['data']['features'] if str(f['id']) == county)
     name = feature['properties']['NAME']
     resources = scenario_resources()
+    center = centroid(feature['geometry'])
+    import math
+    def distance(item):
+        point = item.get('coordinates') or {}
+        lat, lon = point.get('latitude'), point.get('longitude')
+        if lat is None or lon is None: return float('inf')
+        rad = math.pi/180
+        h = math.sin((lat-center['latitude'])*rad/2)**2 + math.cos(lat*rad)*math.cos(center['latitude']*rad)*math.sin((lon-center['longitude'])*rad/2)**2
+        return 3958.7613*2*math.asin(math.sqrt(min(1, max(0, h))))
+    for kind in ('shelter','food','medical'):
+        result = resources[kind]
+        if result['status'] == 'available':
+            result['items'] = [{**item,'distanceMiles':round(distance(item),1)} for item in result['items'] if distance(item)<=50]
+            result['note'] = ('Real reported-open shelters' if kind=='shelter' else 'Real mapped facilities') + ' within 50 miles of the county center. Confirm availability directly.'
+            if not result['items']: result['note'] = 'No '+('open shelters reported' if kind=='shelter' else 'mapped facilities returned')+' within 50 miles in this real source snapshot.'
     census = saved['census']
     county_estimates = next((c for c in (saved['state']['sources'].get('acs', {}).get('data') or {}).get('counties', []) if c['countyId'] == county), {})
     metadata = census['sources']['B01001']
@@ -96,7 +102,7 @@ def scenario_context(county, city=None):
     return {'simulated':True, 'scenario':SCENARIO_ID, 'scenarioName':definition()['name'], 'exerciseTime':definition()['issued'],
         'location':{'city':city or name, 'state':'TX','countyId':county,'countyName':name, **centroid(feature['geometry'])},
         'generatedAt':saved['capturedAt'], 'rankedLiveAlerts':alerts,
-        'scopeNote':'SIMULATED: Hurricane Marlow (fictional). Real counties and Census data, fictional storm. County-wide exercise; shelter capacities and storm conditions are fictional. Source snapshots retain their original retrieval times.',
+        'scopeNote':'SIMULATED: Hurricane Marlow (fictional). Real counties and Census data, fictional storm. Only the storm and its alert conditions are fictional. County facts, facilities, and official safety guidance come from real sources. The plan describes proposed actions if this storm occurred; it does not invent current local impacts or resource availability. Source snapshots retain their original retrieval times.',
         'insights':{'alerts':{**alerts_source,'data':{'alerts':alerts}},
             'census':{**metadata,'name':'Census ACS 2024 county estimates (real)',
                 'data':{**county_estimates, **census['counties'].get(county, {}), 'inputSources':census['sources']}}},
@@ -104,7 +110,7 @@ def scenario_context(county, city=None):
 
 @router.get('/hurricane-marlow')
 async def get_scenario():
-    return {**deepcopy(definition()), 'shelters':simulated_shelters(), 'capturedAt':snapshot()['capturedAt']}
+    return {**deepcopy(definition()), 'shelters':[], 'capturedAt':snapshot()['capturedAt']}
 
 @router.get('/hurricane-marlow/context/{county}')
 async def get_scenario_context(county: str):

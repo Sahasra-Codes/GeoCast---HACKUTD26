@@ -1,0 +1,20 @@
+export function generalReliefPlan({city,state,county,simulated=false,context}:{city:string;state:string;county?:string;simulated?:boolean;context?:any}){
+ const location=context?.location||{city,state,countyId:county||'',countyName:'Selected area'}
+ const resources=context?.resources||{},census=context?.insights?.census?.data
+ const known:string[]=[]
+ const population=typeof census?.population==='number'?census.population:census?.population?.estimate
+ if(typeof population==='number'&&Number.isFinite(population))known.push(`- Total population: ${population.toLocaleString('en-US')} (Census estimate, not people affected).`)
+ for(const [key,label] of [['pct65plus','Residents age 65+'],['pctNoVehicle','Households without a vehicle'],['pctNoInternet','Households without internet']] as const)if(typeof census?.[key]==='number')known.push(`- ${label}: ${census[key].toFixed(1)}% (survey estimate).`)
+ const sources=[['National Weather Service','https://www.weather.gov/alerts'],['Hurricane safety','https://www.weather.gov/safety/hurricane'],['Flood safety','https://www.weather.gov/safety/flood'],['Red Cross shelter directory','https://www.redcross.org/get-help/disaster-relief-and-recovery-services/find-an-open-shelter.html'],['Feeding America food bank locator','https://www.feedingamerica.org/find-your-local-foodbank'],['HRSA health center locator','https://findahealthcenter.hrsa.gov/']]
+ const text=[simulated?'SIMULATED: Hurricane Marlow (fictional)':'General relief planning guidance',
+  'General guidance is shown because a complete local plan could not be produced. It does not establish current impacts, open facilities, or evacuation orders.',
+  '### Situation',`Requested area: ${location.city}, ${location.state}. ${simulated?'Consider the fictional hurricane as a planning exercise; all supporting local facts must come from real sources.':'Check official alerts and local emergency-management instructions before deciding what response is needed.'}`,...known,
+  '### First 6 hours','- Check official NWS alerts and instructions from local authorities.','- Assign someone to verify local conditions and record unmet needs.','- Identify transport, accessibility, language, and communication needs; do not infer individual needs from county estimates.',
+  '### Next 24-72 hours','- Confirm shelter operations, access, hours, and capacity directly before directing anyone there.','- Contact food and medical providers to confirm services, supplies, and access.','- Record proposed tasks, responsible roles, and the next verification time. These are planning suggestions, not dispatch orders.',
+  '### Community needs','- Use available Census estimates for planning, while keeping resident and household measures separate.','- When local demographic data is missing, arrange local needs assessment rather than substituting national figures for county counts.',
+  '### Resource coordination',...Object.entries(resources).filter(([kind,value]:any)=>['shelter','food','medical'].includes(kind)&&value?.status==='available'&&Array.isArray(value.items)).flatMap(([kind,value]:any)=>value.items.filter((item:any)=>!item.simulated).slice(0,3).map((item:any)=>`- Source-listed ${kind}: ${item.title}. Verify current availability directly.`)),
+  '- Use the official directories below when local listings cannot load. A directory is not confirmation that a facility is open.',
+  '### Sources and gaps',...sources.map(([name,url])=>`- [${name}](${url})`),'- Local conditions, facility availability, resource capacity, and any missing Census values require verification. General guidance does not replace official local instructions.'
+ ].join('\n\n')
+ return {id:crypto.randomUUID(),title:simulated?`SIMULATED: Hurricane Marlow (fictional) - ${location.countyName}`:`Relief guidance for ${city}, ${state}`,text,generatedAt:new Date().toISOString(),source:'general_guidance',fallback:true,draft:true,model:'none',simulated,location,alerts:[],...(context?{evidence:context}:{}),wordCount:text.split(/\s+/).length}
+}

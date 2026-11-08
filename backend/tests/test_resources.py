@@ -14,7 +14,7 @@ class ResourceTests(unittest.TestCase):
         with patch('backend.app.resources.httpx.AsyncClient.get', new_callable=AsyncMock, side_effect=httpx.ConnectError('offline')):
             response = self.client.get('/api/resources/safety')
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(all(i['url'].startswith('https://www.ready.gov/') for i in response.json()['items']))
+        self.assertTrue(all(i['url'].startswith(('https://www.ready.gov/','https://www.weather.gov/safety/')) for i in response.json()['items']))
     def test_missing_provider_keys_are_explicit(self):
         with patch.dict(os.environ, {'GOOGLE_PLACES_API_KEY': '', 'DRIVETEXAS_API_KEY': ''}):
             for category in ['transportation']:
@@ -35,11 +35,32 @@ class ResourceTests(unittest.TestCase):
             self.assertIn('hospital',call.call_args.kwargs['data']['data'])
             self.assertNotIn('pharmacy',call.call_args.kwargs['data']['data'])
             self.assertNotIn('X-Goog-Api-Key', call.call_args.kwargs['headers'])
-    def test_red_cross_is_a_directory_not_live_status(self):
-        data=self.client.get('/api/resources/shelter').json()
-        self.assertEqual(data['source'],'American Red Cross')
-        self.assertIn('redcross.org',data['items'][0]['url'])
-        self.assertNotIn('status',data['items'][0])
+    def test_real_shelter_search_excludes_fictional_and_distant_sites_in_simulation(self):
+        result={'source':'FEMA Open Shelters','status':'available','retrievedAt':'2026-11-08','note':'Live feed','items':[
+            {'title':'Real nearby shelter','state':'TX','coordinates':{'latitude':28.1,'longitude':-97.5}},
+            {'title':'Real distant shelter','state':'TX','coordinates':{'latitude':32.8,'longitude':-96.8}},
+            {'title':'Simulated Shelter A','state':'TX','simulated':True,'coordinates':{'latitude':28.0,'longitude':-97.5}}]}
+        with patch('backend.app.resources.open_shelters',AsyncMock(return_value=result)):
+            data=self.client.get('/api/resources/shelter?state=TX&county=48409&location=28.0,-97.5&scenario=hurricane-marlow').json()
+        self.assertEqual([item['title'] for item in data['items']],['Real nearby shelter'])
+        self.assertAlmostEqual(data['items'][0]['distanceMiles'],6.9,1)
+        self.assertEqual(data['source'],'FEMA Open Shelters')
+        self.assertIn('50 miles',data['note'])
+        self.assertNotIn('fictional',data['note'])
+
+    def test_no_open_shelters_are_not_replaced_with_fictional_sites(self):
+        result={'source':'FEMA Open Shelters','status':'available','retrievedAt':'2026-11-08','items':[],'note':''}
+        with patch('backend.app.resources.open_shelters',AsyncMock(return_value=result)):
+            data=self.client.get('/api/resources/shelter?state=TX').json()
+        self.assertEqual(data['items'],[])
+        self.assertIn('No open shelters',data['emptyMessage'])
+        self.assertIn('redcross.org',data['directoryUrl'])
+
+    def test_state_shelter_search_filters_real_feed_by_state(self):
+        result={'source':'FEMA Open Shelters','status':'available','retrievedAt':'2026-11-08','items':[{'title':'Texas shelter','state':'TX'},{'title':'Other shelter','state':'CA'}],'note':''}
+        with patch('backend.app.resources.open_shelters',AsyncMock(return_value=result)):
+            data=self.client.get('/api/resources/shelter?state=TX').json()
+        self.assertEqual([item['title'] for item in data['items']],['Texas shelter'])
     def test_food_uses_overpass_without_a_google_key(self):
         response=httpx.Response(200,json={'elements':[{'type':'node','id':1,'tags':{'name':'Food bank'}}]},request=httpx.Request('POST','https://overpass-api.de/api/interpreter'))
         with patch.dict(os.environ,{'GOOGLE_PLACES_API_KEY':''}),patch('backend.app.resources.httpx.AsyncClient.post',new_callable=AsyncMock,return_value=response) as call:
@@ -63,7 +84,7 @@ class ResourceTests(unittest.TestCase):
         with patch('backend.app.resources.httpx.AsyncClient.post',new_callable=AsyncMock,side_effect=httpx.ReadTimeout('timeout')):
             data=self.client.get('/api/resources/medical?location=32.98613,-96.75072').json()
             self.assertEqual(data['status'],'unavailable')
-            self.assertIn('timeout',data['note'])
+            self.assertEqual(data['note'],'Data temporarily unavailable. Please try again in 5 minutes.')
             self.assertIn('openstreetmap.org/search',data['items'][0]['url'])
 
     def test_county_must_belong_to_state(self):
@@ -122,3 +143,12 @@ class ResourceTests(unittest.TestCase):
         self.assertIsNone(data['items'][1]['details'])
         self.assertIsNone(data['items'][1]['website'])
         self.assertIn('1 unnamed map records omitted',data['note'])
+
+    def test_safety_guides_do_not_contain_fictional_alerts_with_simulation_enabled(self):
+        response=httpx.Response(200,json={'features':[{'properties':{'event':'Flood Watch','instruction':'Monitor later forecasts.','geocode':{'SAME':['048047']}}}]},request=httpx.Request('GET','https://api.weather.gov/alerts/active'))
+        with patch('backend.app.resources.httpx.AsyncClient.get',new_callable=AsyncMock,return_value=response):
+            data=self.client.get('/api/resources/safety?state=TX&county=48047&scenario=hurricane-marlow').json()
+        self.assertEqual(data['source'],'National Weather Service + Ready.gov')
+        self.assertTrue(all(not item.get('simulated') for item in data['items']))
+        self.assertFalse(any('Marlow' in item['title'] for item in data['items']))
+        self.assertTrue(any(item['url']=='https://www.weather.gov/safety/hurricane' for item in data['items']))

@@ -37,7 +37,7 @@ async def relief_context(city: str = Query(min_length=1, max_length=100), state:
         public.source('relief-city:'+state+':'+city.casefold(), 'OpenStreetMap / Nominatim', 'city_location', GEOCODER, 'Representative city center; cities may span counties', 86400, geocode),
         asyncio.sleep(0, result=snapshot()['state']['sources']['boundaries']) if simulated and state == 'TX' else public.boundaries(state))
     if location_source['status'] != 'available':
-        raise HTTPException(503, location_source['error'])
+        raise HTTPException(422 if str(location_source['error']).startswith('City not found') else 503, location_source['error'])
     if boundaries['status'] != 'available':
         raise HTTPException(503, 'County boundaries are unavailable. Retry the location lookup.')
     location = location_source['data']

@@ -73,7 +73,7 @@ export function rankCounties(alerts:PublicAlert[],counties:PriorityCounty[],now:
   if(flagged)notes.push('Alert-weight-only fallback: round(100 * alertWeight). Data unavailable; not a complete priority assessment.')
   const weight=alertWeight(topAlert)
   const simulated=scope.some(a=>a.simulated&&a.countyIds.includes(id))||Object.values(nearestSources).some(source=>source?.simulated)
-  if(simulated)notes.push('SIMULATED: Hurricane Marlow (fictional). Real Census inputs; fictional storm and shelter capacities.')
+  if(simulated)notes.push('SIMULATED: Hurricane Marlow (fictional). Only the storm is fictional. County Census inputs and resource records are real.')
   return {id,simulated,name:county?.name||id,topAlert,alertWeight:weight,vulnerability:v,access,score:flagged?Math.round(100*weight):priorityScore(weight,v!,access!),flagged,partial,usedCategories,notes,inputs:county?.census,distances,nearestSources}
  }).sort((a,b)=>b.score-a.score||(b.vulnerability??-1)-(a.vulnerability??-1)||a.name.localeCompare(b.name)||a.id.localeCompare(b.id))
 }

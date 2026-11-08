@@ -1,3 +1,4 @@
+import GeneralGuidance from './GeneralGuidance'
 import {useScenario} from '../services/scenario'
 import {SimulatedBadge} from './ScenarioControl'
 import {rememberInsightsSelection} from '../services/resourceDefaults'
@@ -107,7 +108,7 @@ export default function InsightsPage() {
       <label>Severity<select aria-label="Severity" value={severity} onChange={event => setSeverity(event.target.value)}><option value="all">All severities</option>{['Extreme','Severe','Moderate','Minor','Unknown'].map(level => <option key={level}>{level}</option>)}</select></label>
       <button onClick={() => { setError(''); setData(undefined); setCounty(undefined); setCountyError(null); setNow(Date.now()); setRefresh(value => value + 1) }}>Refresh sources</button>
     </div>
-    {error && <p className="insights-message" role="alert">{error}</p>}
+    {error && <><p className="insights-message" role="alert">{error}</p><GeneralGuidance/></>}
     {!active && !error && <p role="status">Loading official events...</p>}
     {active && !events.length && <div className="insights-filter-notice" role="status">
       <strong>No events match {severity === 'all' ? 'the current filters' : `the ${severity} severity filter`}.</strong>
@@ -121,18 +122,19 @@ export default function InsightsPage() {
       <div><span className="insights-summary-icon" aria-hidden="true"><Activity size={27}/></span><span><strong>{active ? events.length : '--'}</strong><small>Matching events</small></span></div>
       <div><span className="insights-summary-icon" aria-hidden="true"><MapPin size={27}/></span><span><strong>{selected ? new Set(selected.countyIds).size : active && !selected ? 0 : '--'}</strong><small>Linked counties</small></span></div>
     </section>
-    {active&&<PriorityRanking state={state} alerts={allEvents} selectedId={selected?.id} geometry={active.sources.boundaries.data||{type:'FeatureCollection',features:[]}} alertSource={active.sources.noaa} boundarySource={active.sources.boundaries} now={simulated&&active.simulated?Date.parse(active.generatedAt):now} onCounty={id=>{if(state==='ALL'){const target=stateOptions.find(option=>id.startsWith(option.fips));if(target)changeState(target.code)}setCountyFilter(id);setCountyId(id);setCountyError(null)}}/>}
-    <div className="insights-chart-heading"><small>Last updated: {date(acsSource?.retrievedAt || active?.generatedAt)}</small></div>
+    <div className="insights-chart-heading"><h2>Demographics</h2><small>Last updated: {date(acsSource?.retrievedAt || active?.generatedAt)}</small></div>
     <section className="insights-chart-grid" aria-label="Community impact charts">
+      <article className="insights-card insights-demographics"><h2>Population by Age</h2><p className="insights-caption">{populationLabel} population, not confirmed people affected.</p><PopulationDonut data={acs} scope={populationLabel}/></article>
       <article className="insights-card insights-needs"><h2>Impact by Need</h2>
         <PopulationBar label="Basic Necessities" detail="Population below poverty level" value={acs?.povertyPercent ?? null}/>
         <PopulationBar label="Medical Planning" detail="Population age 65 and older" value={acs?.ageGroups && acs.ageGroups.total > 0 ? acs.ageGroups.olderAdults / acs.ageGroups.total * 100 : null}/>
         <PopulationBar label="Communication" detail="Households without internet" value={acs?.noInternetPercent ?? null}/>
         <PopulationBar label="Accessibility" detail="Households without a vehicle" value={acs?.noVehiclePercent ?? null}/>
       </article>
-      <article className="insights-card insights-demographics"><h2>Population by Age</h2><p className="insights-caption">{populationLabel} population, not confirmed people affected.</p><PopulationDonut data={acs} scope={populationLabel}/></article>
     </section>
     {!acs && <p className="insights-caption" role="status">{!countyFilter&&aggregateError?aggregateError:countyError?.id === populationCountyId ? countyError.message : acsSource?.error || (populationCountyId ? 'Loading county Census estimates. Population charts require an activated CENSUS_API_KEY in backend/.env.' : 'Loading combined Census estimates for all counties...')}</p>}
+    {active&&<PriorityRanking state={state} alerts={allEvents} selectedId={selected?.id} geometry={active.sources.boundaries.data||{type:'FeatureCollection',features:[]}} alertSource={active.sources.noaa} boundarySource={active.sources.boundaries} now={simulated&&active.simulated?Date.parse(active.generatedAt):now} onCounty={id=>{if(state==='ALL'){const target=stateOptions.find(option=>id.startsWith(option.fips));if(target)changeState(target.code)}setCountyFilter(id);setCountyId(id);setCountyError(null)}}/>}
+    {!acs&&<GeneralGuidance category="demographics"/>}
     <div className="insights-layout">
       <section className="insights-event-panel" aria-label="Disasters by severity"><div className="insights-panel-title"><h2>Severity Radar</h2><span>{events.length} events</span></div><p className="insights-caption">{countyFilter ? 'Selected county. Only events with a matching reported county are included.' : state === 'ALL' ? 'All states.' : 'Selected state.'} Highest reported severity first. Observed earthquakes have separate magnitude information.</p>
         <div className="insights-event-list">{events.map(event => <button className={`insights-event ${selected?.id === event.id ? 'selected' : ''}`} key={event.id} aria-pressed={selected?.id === event.id} onClick={() => choose(event)}>
@@ -144,13 +146,10 @@ export default function InsightsPage() {
       <section className="insights-detail" aria-label="Selected disaster details">{selected ? <>
         <article className="insights-card insights-selected">{selected.simulated&&<SimulatedBadge/>}<span className="insights-severity" data-severity={selected.severity}>{selected.severity}</span><h2>{selected.event}</h2><p className="insights-area">{countySummary(selected,allFeatures)}</p><p className="insights-caption insights-alert-meaning">{alertMeaning(selected)}</p><details className="insights-zones"><summary>Zones</summary><p>{selected.area||'Zone names not supplied.'}</p></details>{eventCountyNames(selected,allFeatures).length>0&&<details className="insights-counties"><summary>County names</summary><p>{eventCountyNames(selected,allFeatures).map(county=>county.name).join('; ')}</p></details>}{selected.headline && <p>{selected.headline}</p>}
           <dl className="insights-facts"><div><dt>Source</dt><dd>{earthquake(selected) ? 'USGS observed earthquake' : 'National Weather Service'}</dd></div><div><dt>Issued</dt><dd>{date(selected.sent)}</dd></div><div><dt>{eventEnd(selected).label}</dt><dd>{date(eventEnd(selected).value)}</dd></div></dl>
-          {selected.description && <details><summary>Event description</summary><OfficialAlertText text={selected.description}/></details>}{selected.instruction && <div className="insights-instructions"><h3>Official instructions</h3><p>{selected.instruction}</p></div>}
+          {selected.description && <details><summary>Event description</summary><OfficialAlertText text={selected.description}/></details>}{selected.instruction && <div className="insights-instructions"><h3>{selected.simulated?'Scenario assumptions':'Official instructions'}</h3><p>{selected.instruction}</p></div>}
           {safeUrl(selected.sourceUrl) && <a href={selected.sourceUrl} target="_blank" rel="noreferrer">{selected.simulated?'Fictional scenario source':'Open official event source'}</a>}
         </article>
-        <article className="insights-card"><h2>Reported area</h2><p className="insights-caption">Highlighted counties are linked to the selected event by the source. <strong>Choose a county.</strong></p>
-          {features.length ? <CountyMap features={features} affectedIds={selected.countyIds} countyId={affectedId} onCounty={id => { setCountyId(id); setCountyFilter(id); setCountyError(null) }}/>:<p>{active?.sources.boundaries.status === 'available' ? 'No linked county geometry for this event.' : `County boundaries unavailable. ${active?.sources.boundaries.error || ''}`}</p>}
-          {affected.length > 0 ? <label className="insights-county-select">County population data<select aria-label="County population data" value={affectedId} onChange={event => { setCountyId(event.target.value); setCountyFilter(event.target.value); setCountyError(null) }}>{affected.map(feature => {const id = String(feature.id || feature.properties?.GEOID); return <option value={id} key={id}>{String(feature.properties?.NAME || feature.properties?.BASENAME || id)}</option>})}</select></label> : <p className="insights-message">No linked counties supplied for this event in the selected area. Population cannot be assigned from its area name alone.</p>}
-        </article>
+
         {countyFilter && <article className="insights-card insights-population"><span className="overline">LOCAL POPULATION</span><h2>{acs?.name || String(affected.find(feature => String(feature.id || feature.properties?.GEOID) === affectedId)?.properties?.NAME || 'Selected county')}</h2>
           {countyError?.id === populationCountyId ? <p role="alert">{countyError.message}</p> : !record ? <p role="status">Loading county population...</p> : acs ? <>
             <p className="insights-caption">ACS {acs.period} five-year survey estimates. County context, not a count of people affected by this event.</p>
@@ -161,6 +160,12 @@ export default function InsightsPage() {
         </article>}
       </> : <div className="insights-card insights-empty"><h2>Select a disaster</h2><p>Events and their local population context appear here when sources are available.</p></div>}</section>
     </div>
+    {selected&&<>
+        <article className="insights-card insights-reported-area"><h2>Reported area</h2><p className="insights-caption">Highlighted counties are linked to the selected event by the source. <strong>Choose a county.</strong></p>
+          {features.length ? <CountyMap features={features} affectedIds={selected.countyIds} countyId={affectedId} onCounty={id => { setCountyId(id); setCountyFilter(id); setCountyError(null) }}/>:<p>{active?.sources.boundaries.status === 'available' ? 'No linked county geometry for this event.' : `County boundaries unavailable. ${active?.sources.boundaries.error || ''}`}</p>}
+          {affected.length > 0 ? <label className="insights-county-select">County population data<select aria-label="County population data" value={affectedId} onChange={event => { setCountyId(event.target.value); setCountyFilter(event.target.value); setCountyError(null) }}>{affected.map(feature => {const id = String(feature.id || feature.properties?.GEOID); return <option value={id} key={id}>{String(feature.properties?.NAME || feature.properties?.BASENAME || id)}</option>})}</select></label> : <p className="insights-message">No linked counties supplied for this event in the selected area. Population cannot be assigned from its area name alone.</p>}
+        </article>
+    </>}
   </main>
 }
 function Metric({ label, metric }: { label: string; metric: AcsMetric }) {

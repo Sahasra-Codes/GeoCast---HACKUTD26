@@ -2,20 +2,36 @@
   "scenario": "Hurricane Marlow (fictional)",
   "simulated": true,
   "snapshotCapturedAt": "2026-11-08T08:31:21.560803+00:00",
-  "computedAt": "2026-11-08T08:54:51.582Z",
+  "computedAt": "2026-11-08T12:08:43.452Z",
   "rows": [
     {
       "county": "Brooks County",
       "countyId": "48047",
       "coverageGapRank": 1,
       "severityOnlyRank": 7,
-      "score": 63,
+      "score": 64,
+      "simulated": true
+    },
+    {
+      "county": "Duval County",
+      "countyId": "48131",
+      "coverageGapRank": 2,
+      "severityOnlyRank": 8,
+      "score": 62,
+      "simulated": true
+    },
+    {
+      "county": "Refugio County",
+      "countyId": "48391",
+      "coverageGapRank": 3,
+      "severityOnlyRank": 1,
+      "score": 62,
       "simulated": true
     },
     {
       "county": "Zapata County",
       "countyId": "48505",
-      "coverageGapRank": 2,
+      "coverageGapRank": 4,
       "severityOnlyRank": 9,
       "score": 59,
       "simulated": true
@@ -23,154 +39,138 @@
     {
       "county": "Starr County",
       "countyId": "48427",
-      "coverageGapRank": 3,
+      "coverageGapRank": 5,
       "severityOnlyRank": 10,
       "score": 59,
       "simulated": true
     },
     {
-      "county": "Jim Hogg County",
-      "countyId": "48247",
-      "coverageGapRank": 4,
-      "severityOnlyRank": 11,
-      "score": 56,
-      "simulated": true
-    },
-    {
-      "county": "Calhoun County",
-      "countyId": "48057",
-      "coverageGapRank": 5,
-      "severityOnlyRank": 6,
-      "score": 54,
+      "county": "Kleberg County",
+      "countyId": "48273",
+      "coverageGapRank": 6,
+      "severityOnlyRank": 2,
+      "score": 59,
       "simulated": true
     },
     {
       "county": "Aransas County",
       "countyId": "48007",
-      "coverageGapRank": 6,
-      "severityOnlyRank": 3,
-      "score": 52,
-      "simulated": true
-    },
-    {
-      "county": "Refugio County",
-      "countyId": "48391",
       "coverageGapRank": 7,
-      "severityOnlyRank": 1,
-      "score": 51,
-      "simulated": true
-    },
-    {
-      "county": "McMullen County",
-      "countyId": "48311",
-      "coverageGapRank": 8,
-      "severityOnlyRank": 18,
-      "score": 49,
-      "simulated": true
-    },
-    {
-      "county": "La Salle County",
-      "countyId": "48283",
-      "coverageGapRank": 9,
-      "severityOnlyRank": 15,
-      "score": 48,
-      "simulated": true
-    },
-    {
-      "county": "Duval County",
-      "countyId": "48131",
-      "coverageGapRank": 10,
-      "severityOnlyRank": 8,
-      "score": 45,
-      "simulated": true
-    },
-    {
-      "county": "Kleberg County",
-      "countyId": "48273",
-      "coverageGapRank": 11,
-      "severityOnlyRank": 2,
-      "score": 39,
-      "simulated": true
-    },
-    {
-      "county": "Kenedy County",
-      "countyId": "48261",
-      "coverageGapRank": 12,
-      "severityOnlyRank": 19,
-      "score": 38,
-      "simulated": true
-    },
-    {
-      "county": "Live Oak County",
-      "countyId": "48297",
-      "coverageGapRank": 13,
-      "severityOnlyRank": 13,
-      "score": 38,
-      "simulated": true
-    },
-    {
-      "county": "Goliad County",
-      "countyId": "48175",
-      "coverageGapRank": 14,
-      "severityOnlyRank": 14,
-      "score": 38,
-      "simulated": true
-    },
-    {
-      "county": "San Patricio County",
-      "countyId": "48409",
-      "coverageGapRank": 15,
-      "severityOnlyRank": 5,
-      "score": 33,
-      "simulated": true
-    },
-    {
-      "county": "Cameron County",
-      "countyId": "48061",
-      "coverageGapRank": 16,
-      "severityOnlyRank": 20,
-      "score": 30,
-      "simulated": true
-    },
-    {
-      "county": "Willacy County",
-      "countyId": "48489",
-      "coverageGapRank": 17,
-      "severityOnlyRank": 21,
-      "score": 30,
-      "simulated": true
-    },
-    {
-      "county": "Jim Wells County",
-      "countyId": "48249",
-      "coverageGapRank": 18,
-      "severityOnlyRank": 12,
-      "score": 22,
+      "severityOnlyRank": 3,
+      "score": 59,
       "simulated": true
     },
     {
       "county": "Nueces County",
       "countyId": "48355",
-      "coverageGapRank": 19,
+      "coverageGapRank": 8,
       "severityOnlyRank": 4,
-      "score": 19,
+      "score": 57,
+      "simulated": true
+    },
+    {
+      "county": "San Patricio County",
+      "countyId": "48409",
+      "coverageGapRank": 9,
+      "severityOnlyRank": 5,
+      "score": 57,
+      "simulated": true
+    },
+    {
+      "county": "Jim Hogg County",
+      "countyId": "48247",
+      "coverageGapRank": 10,
+      "severityOnlyRank": 11,
+      "score": 56,
+      "simulated": true
+    },
+    {
+      "county": "Jim Wells County",
+      "countyId": "48249",
+      "coverageGapRank": 11,
+      "severityOnlyRank": 12,
+      "score": 56,
+      "simulated": true
+    },
+    {
+      "county": "Live Oak County",
+      "countyId": "48297",
+      "coverageGapRank": 12,
+      "severityOnlyRank": 13,
+      "score": 56,
+      "simulated": true
+    },
+    {
+      "county": "Goliad County",
+      "countyId": "48175",
+      "coverageGapRank": 13,
+      "severityOnlyRank": 14,
+      "score": 55,
+      "simulated": true
+    },
+    {
+      "county": "Calhoun County",
+      "countyId": "48057",
+      "coverageGapRank": 14,
+      "severityOnlyRank": 6,
+      "score": 54,
+      "simulated": true
+    },
+    {
+      "county": "La Salle County",
+      "countyId": "48283",
+      "coverageGapRank": 15,
+      "severityOnlyRank": 15,
+      "score": 53,
       "simulated": true
     },
     {
       "county": "Bee County",
       "countyId": "48025",
-      "coverageGapRank": 20,
+      "coverageGapRank": 16,
       "severityOnlyRank": 16,
-      "score": 17,
+      "score": 51,
       "simulated": true
     },
     {
       "county": "Webb County",
       "countyId": "48479",
-      "coverageGapRank": 21,
+      "coverageGapRank": 17,
       "severityOnlyRank": 17,
-      "score": 16,
+      "score": 50,
       "simulated": true
+    },
+    {
+      "county": "McMullen County",
+      "countyId": "48311",
+      "coverageGapRank": 18,
+      "severityOnlyRank": 18,
+      "score": 49,
+      "simulated": true
+    },
+    {
+      "county": "Kenedy County",
+      "countyId": "48261",
+      "coverageGapRank": 19,
+      "severityOnlyRank": 19,
+      "score": 38,
+      "simulated": false
+    },
+    {
+      "county": "Cameron County",
+      "countyId": "48061",
+      "coverageGapRank": 20,
+      "severityOnlyRank": 20,
+      "score": 30,
+      "simulated": false
+    },
+    {
+      "county": "Willacy County",
+      "countyId": "48489",
+      "coverageGapRank": 21,
+      "severityOnlyRank": 21,
+      "score": 30,
+      "simulated": false
     }
   ],
   "verified": [
@@ -178,18 +178,18 @@
       "county": "Brooks County",
       "coverageGapRank": 1,
       "severityOnlyRank": 7,
-      "score": 63,
+      "score": 64,
       "vulnerability": 0.723035308141057,
-      "access": 0.9797383924680753
+      "access": 1
     },
     {
       "county": "Duval County",
-      "coverageGapRank": 10,
+      "coverageGapRank": 2,
       "severityOnlyRank": 8,
-      "score": 45,
+      "score": 62,
       "vulnerability": 0.6767817899313003,
-      "access": 0.5172200095986097
+      "access": 1
     }
   ],
-  "requestedBothCountiesRise": false
+  "requestedBothCountiesRise": true
 }

@@ -1,22 +1,32 @@
-import {test,expect} from '@playwright/test'
+import {test,expect,type Page} from '@playwright/test'
 const source=(data:unknown)=>({status:'available',data,name:'Test source',classification:'survey_estimates',retrievedAt:new Date().toISOString(),vintage:'Test fixture',sourceUrl:'https://www.census.gov',error:null})
 const feature=(id:string,name:string)=>({type:'Feature',id,properties:{GEOID:id,NAME:name},geometry:{type:'Polygon',coordinates:[[[-96,29],[-95,29],[-95,30],[-96,29]]]}})
 const payload={state:'TX',sources:{noaa:source({alerts:[]}),fema:source({records:[],limit:200,truncated:false}),nri:source({counties:[]}),boundaries:source({type:'FeatureCollection',features:[feature('48201','Harris County'),feature('48167','Galveston County')]}),acs:source({period:'2020-2024',summary:{residents65Plus:450,noVehicleHouseholds:70},counties:[{countyId:'48201',name:'Harris County',population:1000,households:400,noInternetPercent:20,noVehiclePercent:5},{countyId:'48167',name:'Galveston County',population:2000,households:800,noInternetPercent:10,noVehiclePercent:3}]})}}
+async function mountOverview(page:Page){
+ await page.goto('/login')
+ await page.evaluate(async()=>{
+  const react='/node_modules/.vite/deps/react.js',domPath='/node_modules/.vite/deps/react-dom_client.js',componentPath='/src/components/PublicDataWorkspace.tsx'
+  const React=(await import(react)).default,dom=await import(domPath),Workspace=(await import(componentPath)).default
+  const mount=document.createElement('div');document.body.replaceChildren(mount)
+  ;(dom.createRoot||dom.default.createRoot)(mount).render(React.createElement('div',{className:'real-app geocast geo-workspace'},React.createElement(Workspace,{showFilters:true,closeFilters:()=>{}})))
+ })
+}
 test.beforeEach(async({page})=>{
  await page.route('**/api/public/state/TX',r=>r.fulfill({json:payload}))
  await page.route('**/api/public/county/*',r=>r.fulfill({status:503,json:{detail:'Unavailable'}}))
- await page.goto('/map')
+ await mountOverview(page)
 })
 test('area overview shows dated population and only essential summary facts',async({page})=>{
  const overview=page.getByRole('complementary',{name:'Area overview',exact:true})
  await expect(overview.locator('.simple-area-heading')).toContainText('Texas')
- await expect(overview.getByRole('region',{name:'Community planning counts',exact:true})).toContainText('450')
- await expect(overview.getByRole('region',{name:'Community planning counts',exact:true})).toContainText('2020-2024')
- await expect(overview.getByRole('region',{name:'Community planning counts',exact:true})).toContainText('70')
+ await expect(overview.getByRole('region',{name:'Population',exact:true})).toContainText('3,000')
+ await expect(overview.getByRole('region',{name:'Population',exact:true})).toContainText('2020-2024')
+ await expect(overview).not.toContainText('Residents age 65+')
+ await expect(overview).not.toContainText('Households without a vehicle')
  await expect(overview.locator('.simple-area-facts')).toContainText('Active weather alerts0')
  await expect(overview.locator('.mascot-area,.disaster-alert-group,.overview-alert-card')).toHaveCount(0)
  await page.getByLabel('Public data county').selectOption('48201')
- await expect(overview.getByRole('region',{name:'Community planning counts',exact:true})).toContainText('450')
+ await expect(overview.getByRole('region',{name:'Population',exact:true})).toContainText('3,000')
  await page.getByRole('button',{name:'Apply filters'}).click()
  await expect(overview.locator('.simple-area-heading')).toContainText('Harris County')
  await expect(overview.getByRole('region',{name:'Population',exact:true})).toContainText('1,000')
@@ -24,8 +34,8 @@ test('area overview shows dated population and only essential summary facts',asy
 })
 test('missing county population never produces a misleading partial area total',async({page})=>{
  await page.route('**/api/public/state/TX',r=>r.fulfill({json:{...payload,sources:{...payload.sources,acs:source({period:'2020-2024',counties:[{countyId:'48201',name:'Harris County',population:1000,households:400}]})}}}))
- await page.reload()
+ await mountOverview(page)
  const overview=page.getByRole('complementary',{name:'Area overview',exact:true})
- await expect(overview.getByRole('region',{name:'Community planning counts',exact:true})).toContainText('Not available')
- await expect(overview.getByRole('region',{name:'Community planning counts',exact:true})).not.toContainText('1,000')
+ await expect(overview.getByRole('region',{name:'Population',exact:true})).toContainText('Not available')
+ await expect(overview.getByRole('region',{name:'Population',exact:true})).not.toContainText('1,000')
 })

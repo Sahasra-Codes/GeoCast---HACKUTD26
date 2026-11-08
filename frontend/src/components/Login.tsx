@@ -1,3 +1,4 @@
+import Brand from './Brand'
 import {safeLoginDestination,loginReturnKey} from '../services/loginRedirect';
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
@@ -58,7 +59,7 @@ export default function Login() {
     }
   }
   return <main className="geo-login">
-    <header className="login-header"><a className="login-brand" href="/map" aria-label="State Farm GeoCast home"><svg width="34" height="28" viewBox="0 0 40 32" fill="none" stroke="currentColor" strokeWidth="2.7" aria-hidden="true"><ellipse cx="20" cy="9" rx="9" ry="6"/><ellipse cx="10" cy="22" rx="9" ry="6"/><ellipse cx="30" cy="22" rx="9" ry="6"/></svg><strong>State Farm<sup>&reg;</sup></strong><span>GeoCast</span></a></header>
+    <header className="login-header"><Brand/></header>
     <section className="login-form-side">
       <div className="login-card">
         <span className="login-eyebrow">STATE FARM | GEOCAST</span>

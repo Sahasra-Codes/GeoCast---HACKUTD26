@@ -9,3 +9,13 @@
 .relief-location-form .relief-generate{grid-column:1/-1;width:auto;justify-self:start;gap:28px;padding:14px 22px;font-size:18px;margin:0}
 .relief-simple .relief-plan-text{margin-top:24px}
 @media(max-width:650px){.relief-location-form{grid-template-columns:1fr}.relief-simple>.relief-request-card{padding:20px}}
+
+.relief-plan-prose{white-space:normal;max-width:850px;font-size:17px;line-height:1.8}
+.relief-plan-prose h3{font-size:22px;font-weight:650;margin:30px 0 16px;padding-top:22px;border-top:1px solid #e5ddd8;color:#4a2224}
+.relief-plan-prose p{margin:12px 0}.relief-plan-prose strong{font-weight:650;color:#4a2224}
+.relief-plan-prose ul,.relief-plan-prose ol{padding-left:26px;margin:12px 0 20px;list-style-position:outside}
+.relief-plan-prose ul{list-style-type:disc}.relief-plan-prose ol{list-style-type:decimal}
+.relief-plan-prose li{padding-left:5px;margin:10px 0;line-height:1.8}.relief-plan-prose li ul{list-style-type:circle;margin:8px 0 12px}
+.relief-plan-prose hr{border:0;border-top:1px solid #e5ddd8;margin:26px 0}.relief-plan-prose a{text-decoration:underline;color:#b01829}.relief-plan-prose code{background:#f4efed;border-radius:4px;padding:2px 5px;font-size:.95em}
+.relief-plan-actions{display:flex;align-items:center;flex-wrap:wrap;gap:18px;border-top:1px solid #e5ddd8;margin-top:26px;padding-top:20px}
+.relief-plan-actions>button{border:1px solid #d9c3b8;border-radius:8px;padding:10px 18px;background:#fff;color:#a9112c}.relief-plan-actions p{margin:0}.relief-plan-actions a{color:#a9112c;text-decoration:underline}

@@ -16,7 +16,7 @@ import './InsightsPage.css'
 const number = (value: number | null | undefined) => value == null ? 'Unavailable' : value.toLocaleString()
 const date = (value: string | null | undefined) => value ? new Date(value).toLocaleString(undefined,{timeZone:'America/Chicago',timeZoneName:'short',year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'Not supplied'
 const earthquake = (event: PublicAlert) => event.kind === 'observed_earthquake'
-const safeUrl = (url: string) => url.startsWith('https://') ? url : undefined
+const safeUrl = (url: string) => url.startsWith('https://')||url.startsWith('/api/public/scenarios/') ? url : undefined
 function rings(geometry: Geometry): Position[][] {
   if (geometry.type === 'Polygon') return geometry.coordinates
   if (geometry.type === 'MultiPolygon') return geometry.coordinates.flat()
@@ -61,7 +61,7 @@ export default function InsightsPage() {
   const allEvents = useMemo(() => {
     const nws = active?.sources.noaa.status === 'available' ? active.sources.noaa.data?.alerts || [] : []
     const quakes = active?.sources.earthquakes?.status === 'available' ? active.sources.earthquakes.data?.events || [] : []
-    return [...new Map([...nws, ...quakes].filter(event => (!event.simulated||simulated)&&isCurrentAlert(event, now)).map(event => [event.id, event])).values()]
+    return [...new Map([...nws, ...quakes].filter(event => (!event.simulated||simulated)&&isCurrentAlert(event,simulated&&active?.simulated?Date.parse(active.generatedAt):now)).map(event => [event.id, event])).values()]
       .sort((a, b) => severityLevel(b.severity) - severityLevel(a.severity) || a.event.localeCompare(b.event) || a.id.localeCompare(b.id))
   }, [active, now,simulated])
   const events = allEvents.filter(event => (severity === 'all' || event.severity === severity) && (!countyFilter || event.countyIds.includes(countyFilter)))
@@ -121,7 +121,7 @@ export default function InsightsPage() {
       <div><span className="insights-summary-icon" aria-hidden="true"><Activity size={27}/></span><span><strong>{active ? events.length : '--'}</strong><small>Matching events</small></span></div>
       <div><span className="insights-summary-icon" aria-hidden="true"><MapPin size={27}/></span><span><strong>{selected ? new Set(selected.countyIds).size : active && !selected ? 0 : '--'}</strong><small>Linked counties</small></span></div>
     </section>
-    {active&&<PriorityRanking state={state} alerts={allEvents} selectedId={selected?.id} geometry={active.sources.boundaries.data||{type:'FeatureCollection',features:[]}} alertSource={active.sources.noaa} boundarySource={active.sources.boundaries} now={now} onCounty={id=>{if(state==='ALL'){const target=stateOptions.find(option=>id.startsWith(option.fips));if(target)changeState(target.code)}setCountyFilter(id);setCountyId(id);setCountyError(null)}}/>}
+    {active&&<PriorityRanking state={state} alerts={allEvents} selectedId={selected?.id} geometry={active.sources.boundaries.data||{type:'FeatureCollection',features:[]}} alertSource={active.sources.noaa} boundarySource={active.sources.boundaries} now={simulated&&active.simulated?Date.parse(active.generatedAt):now} onCounty={id=>{if(state==='ALL'){const target=stateOptions.find(option=>id.startsWith(option.fips));if(target)changeState(target.code)}setCountyFilter(id);setCountyId(id);setCountyError(null)}}/>}
     <div className="insights-chart-heading"><small>Last updated: {date(acsSource?.retrievedAt || active?.generatedAt)}</small></div>
     <section className="insights-chart-grid" aria-label="Community impact charts">
       <article className="insights-card insights-needs"><h2>Impact by Need</h2>
@@ -136,7 +136,7 @@ export default function InsightsPage() {
     <div className="insights-layout">
       <section className="insights-event-panel" aria-label="Disasters by severity"><div className="insights-panel-title"><h2>Severity Radar</h2><span>{events.length} events</span></div><p className="insights-caption">{countyFilter ? 'Selected county. Only events with a matching reported county are included.' : state === 'ALL' ? 'All states.' : 'Selected state.'} Highest reported severity first. Observed earthquakes have separate magnitude information.</p>
         <div className="insights-event-list">{events.map(event => <button className={`insights-event ${selected?.id === event.id ? 'selected' : ''}`} key={event.id} aria-pressed={selected?.id === event.id} onClick={() => choose(event)}>
-          {event.simulated&&<SimulatedBadge/>}<span className="insights-event-top"><span className="insights-severity" data-severity={event.severity}>{event.severity}</span><small>{earthquake(event) ? 'USGS observation' : 'NWS alert'}</small></span>
+          {event.simulated&&<SimulatedBadge/>}<span className="insights-event-top"><span className="insights-severity" data-severity={event.severity}>{event.severity}</span><small>{event.simulated?'Fictional exercise':earthquake(event) ? 'USGS observation' : 'NWS alert'}</small></span>
           <strong>{event.event}</strong><span>{countySummary(event,allFeatures)}</span>{state === 'ALL' && <small>{(event.stateCodes?.length ? event.stateCodes : stateOptions.filter(option => event.countyIds.some(id => id.startsWith(option.fips))).map(option => option.code)).join(', ') || 'State not supplied'}</small>}<small>{earthquake(event) && event.magnitude != null ? `Magnitude ${event.magnitude} | ` : ''}Issued {date(event.sent)}</small>
         </button>)}</div>
         {active && !events.length && <p className="insights-message">No returned events match this selection. Try another state or clear the filters.</p>}
@@ -145,7 +145,7 @@ export default function InsightsPage() {
         <article className="insights-card insights-selected">{selected.simulated&&<SimulatedBadge/>}<span className="insights-severity" data-severity={selected.severity}>{selected.severity}</span><h2>{selected.event}</h2><p className="insights-area">{countySummary(selected,allFeatures)}</p><p className="insights-caption insights-alert-meaning">{alertMeaning(selected)}</p><details className="insights-zones"><summary>Zones</summary><p>{selected.area||'Zone names not supplied.'}</p></details>{eventCountyNames(selected,allFeatures).length>0&&<details className="insights-counties"><summary>County names</summary><p>{eventCountyNames(selected,allFeatures).map(county=>county.name).join('; ')}</p></details>}{selected.headline && <p>{selected.headline}</p>}
           <dl className="insights-facts"><div><dt>Source</dt><dd>{earthquake(selected) ? 'USGS observed earthquake' : 'National Weather Service'}</dd></div><div><dt>Issued</dt><dd>{date(selected.sent)}</dd></div><div><dt>{eventEnd(selected).label}</dt><dd>{date(eventEnd(selected).value)}</dd></div></dl>
           {selected.description && <details><summary>Event description</summary><OfficialAlertText text={selected.description}/></details>}{selected.instruction && <div className="insights-instructions"><h3>Official instructions</h3><p>{selected.instruction}</p></div>}
-          {safeUrl(selected.sourceUrl) && <a href={selected.sourceUrl} target="_blank" rel="noreferrer">Open official event source</a>}
+          {safeUrl(selected.sourceUrl) && <a href={selected.sourceUrl} target="_blank" rel="noreferrer">{selected.simulated?'Fictional scenario source':'Open official event source'}</a>}
         </article>
         <article className="insights-card"><h2>Reported area</h2><p className="insights-caption">Highlighted counties are linked to the selected event by the source. <strong>Choose a county.</strong></p>
           {features.length ? <CountyMap features={features} affectedIds={selected.countyIds} countyId={affectedId} onCounty={id => { setCountyId(id); setCountyFilter(id); setCountyError(null) }}/>:<p>{active?.sources.boundaries.status === 'available' ? 'No linked county geometry for this event.' : `County boundaries unavailable. ${active?.sources.boundaries.error || ''}`}</p>}

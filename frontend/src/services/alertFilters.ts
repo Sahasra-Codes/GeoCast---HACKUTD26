@@ -4,6 +4,8 @@ import {classifyHazard} from '../data/catalog'
 export const severityLevels: Record<string, number> = {Extreme:4, Severe:3, Moderate:2, Minor:1, Unknown:0.5}
 export const severityLevel = (value: string) => severityLevels[value] ?? 0
 export function isCurrentAlert(alert: PublicAlert, now: number) {
+  // A fictional exercise has its own fixed clock; real feed timestamps are never altered.
+  if(alert.simulated&&alert.id.startsWith('simulated:marlow:'))now=Date.parse('2026-11-08T09:00:00-06:00')
   const start=alert.effective?Date.parse(alert.effective):null
   const endTimes=[alert.expires,alert.ends].filter((value):value is string=>!!value).map(value=>Date.parse(value))
   if(start!==null&&(!Number.isFinite(start)||start>now))return false

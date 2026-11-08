@@ -83,7 +83,7 @@ export default function PublicDataWorkspace({ showFilters, closeFilters, initial
   const activeCounty = countyData?.countyId === countyId ? countyData : undefined
   const rawCounties = activeState?.sources.boundaries.data || empty
   const rawAlerts = useMemo(() => [...(activeState?.sources.noaa.data?.alerts || noAlerts),...(activeState?.sources.earthquakes?.data?.events || noAlerts)], [activeState])
-  const currentAlerts = useMemo(() => rawAlerts.filter(a=>(!a.simulated||simulated)&&isCurrentAlert(a,currentTime)),[rawAlerts,currentTime,simulated])
+  const currentAlerts = useMemo(() => rawAlerts.filter(a=>(!a.simulated||simulated)&&isCurrentAlert(a,simulated&&activeState?.simulated?Date.parse(activeState.generatedAt):currentTime)),[rawAlerts,currentTime,simulated])
   const eventTypes = [...new Set(filterAlerts.map(a=>a.event))].sort()
   const relevantAlerts = useMemo(() => currentAlerts.filter(a=>matchesAlertType(a,hazardFilter)&&(!severities.length||severities.includes(a.severity))),[currentAlerts,hazardFilter,severities])
   const historicalRecords = useMemo(() => (activeState?.sources.fema.data?.records || []).filter(r => hazardFilter === 'all' || (!hazardFilter.includes(':') && classifyHazard(r.type || r.title || '') === hazardFilter)),[activeState,hazardFilter])

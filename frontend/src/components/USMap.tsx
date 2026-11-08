@@ -1,3 +1,5 @@
+import MarlowStormLayer from './MarlowStormLayer'
+import {useScenario} from '../services/scenario'
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import * as maplibregl from "maplibre-gl";
@@ -54,6 +56,7 @@ interface Props {
   visibleCountyIds?: string[];
 }
 export default function USMap(props: Props) {
+  const simulated=useScenario()
   const container = useRef<HTMLDivElement>(null);
   const [readyMap, setReadyMap] = useState<LibreMap | null>(null);
   const [tileError, setTileError] = useState(false);
@@ -571,6 +574,7 @@ export default function USMap(props: Props) {
       {readyMap && (
         <>
           {props.publicMapData && props.showRadar && <LiveRadarLayer map={readyMap}/>}
+          {props.publicMapData && simulated && props.publicMapData.alerts.some(alert=>alert.simulated) && <MarlowStormLayer map={readyMap}/>}
           {props.publicMapData && <PublicMapLayers map={readyMap} data={props.publicMapData} onCounty={props.onPublicCounty || (() => {})} onAlert={props.onPublicAlert || (() => {})}/>}
           <RiskHeatmap
             map={readyMap}

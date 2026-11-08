@@ -1,0 +1,57 @@
+import {test, expect} from '@playwright/test'
+
+// The prioritization panel has no WebGL dependency. Avoid the repository's
+// system-Chrome software-GPU flags, which stall page creation on this machine.
+test.use({launchOptions:{args:[]}})
+
+test('responder can advance silent priority, explain it and dispatch into Relief', async ({page, request}) => {
+  const response = await request.get('/api/priority')
+  expect(response.ok()).toBeTruthy()
+  const initial = await response.json()
+  await page.goto('/insights')
+  const panel = page.getByRole('region', {name: 'Silent Zone prioritization'})
+  await expect(panel.getByText('Simulated data', {exact:true})).toBeVisible()
+  await expect(panel.getByText(`Hour ${initial.hour}`, {exact:true})).toBeVisible()
+  await expect(panel.locator('.silent-ranking > li')).toHaveCount(6)
+  for (let i=1; i<=5; i++) {
+    await panel.getByRole('button', {name:'Advance 1 hour'}).click()
+    await expect(panel.getByText(`Hour ${initial.hour+i}`, {exact:true})).toBeVisible()
+  }
+  await expect(panel.locator('.silent-ranking > li').first()).toHaveAttribute('data-zone-id','zone-3')
+  const zone3=panel.locator('[data-zone-id="zone-3"]')
+  await expect(zone3.getByText('Reports down 80% from normal', {exact:true})).toBeVisible()
+  await expect(zone3.locator('.silent-signal')).toContainText(`${initial.zones.find((z:{zoneId:string})=>z.zoneId==='zone-3').hoursSinceLastReport+5}h ago`)
+  await panel.getByRole('button', {name:'Generate briefing'}).click()
+  const briefing=panel.getByRole('complementary',{name:'Responder briefing'})
+  await expect(briefing).toBeVisible({timeout:20000})
+  await expect(briefing).toContainText('Willow Bend')
+  await expect(briefing).toContainText('human responder makes the final decision')
+  const dispatch=zone3.getByRole('button',{name:'Dispatch',exact:true})
+  if (await dispatch.count()) await dispatch.click()
+  await expect(zone3.getByRole('button',{name:'Dispatched',exact:true})).toBeDisabled()
+  await panel.getByRole('link',{name:'Relief queue'}).click()
+  await page.getByText('Silent Zone simulation dispatch queue',{exact:true}).click()
+  const queue=page.getByRole('region',{name:'Silent Zone dispatch queue'})
+  await expect(queue.locator('[data-zone-id="zone-3"]')).toBeVisible()
+  await expect(queue.getByRole('button',{name:'Dispatched',exact:true})).toBeDisabled()
+  await page.goto('/insights')
+  await expect(page.locator('[data-zone-id="zone-3"] button')).toHaveText('Dispatched')
+  await page.screenshot({path:'test-results/silent-zone-desktop.png',fullPage:true})
+  await page.setViewportSize({width:390,height:844})
+  await expect(page.getByRole('button',{name:'Advance 1 hour'})).toBeVisible()
+  const bounds=await page.getByRole('region',{name:'Silent Zone prioritization'}).boundingBox()
+  expect(bounds!.x).toBeGreaterThanOrEqual(0)
+  expect(bounds!.x+bounds!.width).toBeLessThanOrEqual(390)
+  await page.screenshot({path:'test-results/silent-zone-mobile.png',fullPage:true})
+})
+
+test('service failure is explicit and retry recovers without fake rankings', async ({page}) => {
+  await page.route('**/api/priority',route=>route.fulfill({status:503,body:'unavailable'}))
+  await page.goto('/insights')
+  const panel=page.getByRole('region',{name:'Silent Zone prioritization'})
+  await expect(panel.getByRole('alert')).toContainText('Silent Zone service is unavailable')
+  await expect(panel.locator('.silent-ranking > li')).toHaveCount(0)
+  await page.unroute('**/api/priority')
+  await panel.getByRole('button',{name:'Retry'}).click()
+  await expect(panel.locator('.silent-ranking > li')).toHaveCount(6)
+})

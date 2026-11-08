@@ -10,11 +10,11 @@ from pydantic import BaseModel, Field
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 router = APIRouter()
 
-SYSTEM_PROMPT = """You are GEO Guide, a helpful assistant for the GEO geographic disaster dashboard.
+SYSTEM_PROMPT = """You are GEO Guide, a helpful assistant for the GeoCast geographic disaster dashboard.
 Answer general questions and explain how to use this website in concise plain text. Default to 2-4 short sentences unless more detail is requested.
 Navigation: use the sidebar location search to find states/counties or demo cities/ZIPs;
 select a disaster type; choose population needs and Any/All matching, then apply with
-Find communities. Click a county or disaster marker for details. Map layers include
+Apply filters. Click a county or disaster marker for details. Map layers include
 activity, risk, needs, and assistance. The chatbot's navigation buttons open filters,
 switch to assistance, or open About data. Never claim you clicked controls yourself.
 The default dashboard uses synthetic disaster scenarios, predictions, population needs,
@@ -38,11 +38,11 @@ async def chat(request: ChatRequest):
         raise HTTPException(422, "The last message must be from the user.")
     question = request.messages[-1].content.lower().strip()
     if "filter" in question and any(phrase in question for phrase in ("how", "help", "use", "explain")):
-        return {"reply": "Website guide: To use the filters, open the sidebar filters (on mobile, use the menu button). In the sidebar, search for a state or county, choose a disaster type, and select the population needs you want to explore. Choose Any to match at least one selected need or All to match every selected need, then click Find communities to apply. Click a county on the map to view its details. Use Clear filters to start again. The dashboard uses demo data."}
+        return {"reply": "Website guide: To use the filters, open the sidebar filters (on mobile, use the menu button). In the sidebar, search for a state or county, choose a disaster type, and select the population needs you want to explore. Choose Any to match at least one selected need or All to match every selected need, then click Apply filters to apply. Click a county on the map to view its details. Use Clear filters to start again. The dashboard uses demo data."}
     if question in {"hi", "hello", "hey", "help", "how do i use this website?", "how do i use this website"}:
         return {"reply": "Hi! Search for a state or county in the sidebar, choose a disaster type or population needs, then click Find communities. Click a county or map marker for details, or switch map layers to explore risk and assistance. This website uses demo data."}
     if question in {"how do i find nearby resources?", "find nearby resources", "where can i find resources?"}:
-        return {"reply": "Select your location in the sidebar, then switch the map layer to Assistance. Click a resource marker to explore its details. Resource listings are demo examples, not verified operational shelters or live availability."}
+        return {"reply": "Select your location in the sidebar, then open the Resources tab or switch the map layer to Assistance. Click a resource marker to explore its details. Resource listings are demo examples, not verified operational shelters or live availability."}
     key = os.getenv("GEMINI_API_KEY", "").strip()
     if not key:
         raise HTTPException(503, "AI chat is not configured yet. Add GEMINI_API_KEY to backend/.env and restart the backend. Navigation buttons still work.")

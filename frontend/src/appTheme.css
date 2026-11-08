@@ -1,0 +1,33 @@
+/* Shared dashboard typography and neutral page surfaces. */
+:root{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:#fff}
+body{background:#fff}
+.real-app{font-family:"Segoe UI",Tahoma,Arial,sans-serif;font-size:17px}
+.real-app:not(.night-mode){--sr-bg:#fff;--sr-card:#fff;--sr-ink:#4a2224;--sr-muted:#765f50;background:#fff;color:#4a2224}
+.real-app:not(.night-mode) :is(.geo-header,.sidebar-container,.geo-sidebar,.area-overview,.county-overview-drawer,.resource-hub,.insights-page,.relief-page,.directory-page,.alert-insights){background:#fff}
+.real-app:not(.night-mode) :is(.resource-hub-card,.resource-results,.resource-result-grid>article,.insights-card,.insights-event-panel,.insights-summary-strip,.relief-events,.relief-request-card,.relief-plan-result,.directory-card,.resource-official-card,.insights-empty){background:#fff;border-color:#e5ddd8;color:#4a2224}
+.real-app :is(.resource-hub,.insights-page,.relief-page,.directory-page,.alert-insights){font-family:inherit;font-size:17px;line-height:1.6}
+.real-app :is(.resource-hub,.insights-page,.relief-page,.directory-page,.alert-insights) :is(p,label,input,select,textarea,button){font-family:inherit;font-size:17px;line-height:1.6}
+.real-app :is(.resource-hub,.insights-page,.relief-page,.directory-page,.alert-insights) h1{font-family:inherit;font-size:30px;font-weight:650;line-height:1.25;letter-spacing:-.7px}
+.real-app :is(.resource-hub,.insights-page,.relief-page,.directory-page,.alert-insights) h2{font-family:inherit;font-size:23px;font-weight:600;line-height:1.4}
+.real-app :is(.resource-hub,.insights-page,.relief-page,.directory-page,.alert-insights) :is(h3,h4){font-family:inherit;font-size:19px;line-height:1.5}
+.real-app :is(.insights-caption,.insights-sources,.resource-hub-footnote,.resource-source,.resource-source-note,.resource-status,.resource-card-icon~span small,.resource-result-grid small,.relief-note,.relief-freshness,.relief-request-card>small,.relief-plan-scope small,.priority-ranking th,.priority-ranking td small,.county-caption){font-size:16px!important;line-height:1.65}
+.real-app :is(.resource-hub-card small,.insights-summary-strip small,.insights-event small,.insights-severity,.insights-donut-legend,.relief-event small,.relief-live,.priority-ranking table,.priority-formula){font-size:16px;line-height:1.6}
+.real-app :is(.safe-demo-status,.relief-live){font-family:inherit;font-size:16px;font-weight:400;line-height:1.5;color:#765f50;letter-spacing:0}
+.real-app .resource-hub-search input{font:17px/1.6 "Segoe UI",Tahoma,Arial,sans-serif}
+.real-app .priority-ranking td button{font-size:16px}
+.real-app .official-alert-text :is(p,li){font-size:17px!important}
+@media(max-width:760px){.real-app .insights-summary-strip{gap:18px}.real-app :is(.resource-hub,.insights-page,.relief-page) :is(input,select,textarea){font-size:17px}}
+.geo-login{background:#fff}
+
+.real-app :is(.safe-demo-status,.relief-live) i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#c69b54;box-shadow:0 0 0 3px #f8f1e5;flex-shrink:0}
+
+.real-app:not(.night-mode) :is(.relief-events,.relief-request-card,.relief-plan-result){background:#fff;border:1px solid #d9c3b8;border-radius:14px;box-shadow:0 3px 15px #4a222408}.real-app .relief-event{border-top-color:#ddc9be}.real-app .relief-request-card{padding:24px}
+
+.profile-account-menu{position:relative}.profile-account-menu>.profile-icon-button{display:grid;place-items:center;width:43px;height:43px;border:1px solid #e1cec4;border-radius:50%;background:#fff;color:#b01829;cursor:pointer;list-style:none}.profile-icon-button::-webkit-details-marker{display:none}.profile-icon-button:focus-visible{outline:2px solid #b01829;outline-offset:3px}.profile-account-panel{position:absolute;top:calc(100% + 10px);right:0;z-index:100;width:260px;max-width:calc(100vw - 32px);padding:20px;background:#fff;border:1px solid #e1cec4;border-radius:12px;box-shadow:0 8px 25px #4a222418;color:#4a2224}.profile-account-panel>strong{font-size:17px}.profile-account-panel>p{font-size:15px;overflow-wrap:anywhere;margin:10px 0 18px;color:#765f50}.profile-account-panel>button{display:flex;align-items:center;gap:9px;font-size:16px;color:#b01829}.profile-account-panel>button>span{display:inline}
+
+.real-app .geocast-wordmark .geocast-brand-mascot{display:block;width:42px;height:48px;object-fit:contain;flex-shrink:0}
+
+.scenario-control{display:flex;align-items:center;flex-wrap:wrap;gap:12px 24px;padding:12px 28px;border-bottom:1px solid #e5ddd8;background:#fff;font-size:16px;color:#62463d}
+.scenario-control label{display:flex;align-items:center;gap:9px;font-weight:600;cursor:pointer}.scenario-control input{accent-color:#b20d2a;width:18px;height:18px}
+.simulated-badge{display:inline-flex;align-items:center;border:1px solid #bf7332;background:#fff2de;color:#793c15;border-radius:5px;padding:2px 8px;font-size:15px;font-weight:650;line-height:1.5;margin:4px 8px 4px 0;white-space:nowrap}
+@media(max-width:650px){.scenario-control{padding:12px 18px;gap:8px}.scenario-control>span{flex-basis:100%}}

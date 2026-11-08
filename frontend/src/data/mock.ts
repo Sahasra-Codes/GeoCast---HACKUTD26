@@ -15,7 +15,15 @@ export const mockData: IntelligenceData = {
       status: "Active simulation",
       updatedAt: "2026-11-07T14:00:00Z",
       countyId: "22071",
-      affectedCountyIds: ["22071", "22051", "22075", "22103", "28047", "28059", "01097"],
+      affectedCountyIds: [
+        "22071",
+        "22051",
+        "22075",
+        "22103",
+        "28047",
+        "28059",
+        "01097",
+      ],
       declarationStatus: "Simulated declaration",
       impactZone: [
         [-89.4, 27.1],

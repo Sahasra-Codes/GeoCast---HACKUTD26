@@ -1,0 +1,3 @@
+export default function ReliefActions(){
+ return <section className="official-relief-actions" aria-label="Ways to provide relief"><h2>How you can help</h2><p>Support relief through established organizations. These links do not confirm an active deployment in the selected county.</p><div><a href="https://www.redcross.org/donate/donation.html/" target="_blank" rel="noreferrer"><strong>Donate to disaster relief</strong><span>American Red Cross</span></a><a href="https://www.redcross.org/volunteer/become-a-volunteer.html" target="_blank" rel="noreferrer"><strong>Find volunteer opportunities</strong><span>Apply through the American Red Cross</span></a></div></section>
+}

@@ -7,6 +7,9 @@ maplibregl.setWorkerUrl(workerUrl);
 import {
   Crosshair,
   HeartHandshake,
+  House,
+  Cross,
+  PackageOpen,
   Minus,
   Plus,
   RotateCcw,
@@ -23,6 +26,9 @@ import mapStyle from "../data/basemap.json";
 import DisasterMarker from "./DisasterMarker";
 import DisasterPopup from "./DisasterPopup";
 import RiskHeatmap from "./RiskHeatmap";
+import LiveRadarLayer from "./LiveRadarLayer";
+import PublicMapLayers from "./PublicMapLayers";
+import type { PublicMapData } from "../publicDataTypes";
 
 interface Props {
   geography: Geography;
@@ -32,6 +38,13 @@ interface Props {
   focus?: GeographicRegion;
   showPopup: boolean;
   showForecast: boolean;
+  showOverlays?: boolean;
+  publicMapData?: PublicMapData;
+  onPublicCounty?: (id: string) => void;
+  onPublicAlert?: (id: string) => void;
+  showRadar?: boolean;
+  showResponseSites?: boolean;
+  radarFrame?: number;
   onEvent: (event: DisasterEvent) => void;
   onRegion: (region: GeographicRegion) => void;
   onExplore: (event: DisasterEvent) => void;
@@ -46,7 +59,15 @@ export default function USMap(props: Props) {
   const [tileError, setTileError] = useState(false);
   const [fatalError, setFatalError] = useState(false);
   const callbacks = useRef(props);
-  const visiblePredictions = useMemo(() => props.visibleCountyIds ? props.data.predictions.filter(p => props.visibleCountyIds!.includes(p.countyId)) : props.data.predictions, [props.data, props.visibleCountyIds]);
+  const visiblePredictions = useMemo(
+    () =>
+      props.visibleCountyIds
+        ? props.data.predictions.filter((p) =>
+            props.visibleCountyIds!.includes(p.countyId),
+          )
+        : props.data.predictions,
+    [props.data, props.visibleCountyIds],
+  );
   useEffect(() => {
     callbacks.current = props;
   }, [props]);
@@ -122,13 +143,57 @@ export default function USMap(props: Props) {
           "line-width": 0.5,
         },
       });
-      map.addSource('atlas-grid', { type: 'geojson', data: { type: 'FeatureCollection', features: [
-        ...Array.from({ length: 15 }, (_, i) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'LineString' as const, coordinates: [[-130+i*5,18],[-130+i*5,57]] } })),
-        ...Array.from({ length: 9 }, (_, i) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'LineString' as const, coordinates: [[-135,18+i*5],[-55,18+i*5]] } })),
-      ] } });
-      map.addLayer({ id: 'atlas-grid-lines', type: 'line', source: 'atlas-grid', maxzoom: 7, paint: { 'line-color': '#f3f2d9', 'line-width': 0.6, 'line-opacity': 0.3 } });
-      map.addSource('hover-region', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      map.addLayer({ id: 'hover-region-fill', type: 'fill', source: 'hover-region', paint: { 'fill-color': '#557865', 'fill-opacity': 0.15 } });
+      map.addSource("atlas-grid", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: [
+            ...Array.from({ length: 15 }, (_, i) => ({
+              type: "Feature" as const,
+              properties: {},
+              geometry: {
+                type: "LineString" as const,
+                coordinates: [
+                  [-130 + i * 5, 18],
+                  [-130 + i * 5, 57],
+                ],
+              },
+            })),
+            ...Array.from({ length: 9 }, (_, i) => ({
+              type: "Feature" as const,
+              properties: {},
+              geometry: {
+                type: "LineString" as const,
+                coordinates: [
+                  [-135, 18 + i * 5],
+                  [-55, 18 + i * 5],
+                ],
+              },
+            })),
+          ],
+        },
+      });
+      map.addLayer({
+        id: "atlas-grid-lines",
+        type: "line",
+        source: "atlas-grid",
+        maxzoom: 7,
+        paint: {
+          "line-color": "#f3f2d9",
+          "line-width": 0.6,
+          "line-opacity": 0.3,
+        },
+      });
+      map.addSource("hover-region", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "hover-region-fill",
+        type: "fill",
+        source: "hover-region",
+        paint: { "fill-color": "#557865", "fill-opacity": 0.15 },
+      });
       map.addSource("selection", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
@@ -246,22 +311,32 @@ export default function USMap(props: Props) {
         const county =
           features.find((f) => f.layer.id === "risk-fill") ||
           features.find((f) => f.layer.id === "county-areas");
-        const chosen = county || features[0];
+        const chosen = callbacks.current.publicMapData ? features.find(f => f.layer.id === "state-areas") : county || features[0];
         const region =
           chosen &&
           callbacks.current.geography.regions.find(
-            (r) => r.id === String(chosen.id),
+            (r) => chosen.layer.id === "state-areas" ? r.kind === "state" && r.id.padStart(2,"0") === String(chosen.id).padStart(2,"0") : r.id === String(chosen.id),
           );
         if (region) callbacks.current.onRegion(region);
       });
       let hoveredId: string | undefined;
       map.on("mousemove", (e) => {
-        const hit = map.queryRenderedFeatures(e.point, { layers: ["county-areas", "state-areas"] })[0];
+        const hit = map.queryRenderedFeatures(e.point, {
+          layers: ["county-areas", "state-areas"],
+        })[0];
         const id = hit ? String(hit.id) : undefined;
         if (id !== hoveredId) {
           hoveredId = id;
-          const original = id && [...props.geography.counties.features, ...props.geography.states.features].find(f => String(f.id) === id);
-          (map.getSource("hover-region") as maplibregl.GeoJSONSource).setData({ type: "FeatureCollection", features: original ? [original] : [] });
+          const original =
+            id &&
+            [
+              ...props.geography.counties.features,
+              ...props.geography.states.features,
+            ].find((f) => String(f.id) === id);
+          (map.getSource("hover-region") as maplibregl.GeoJSONSource).setData({
+            type: "FeatureCollection",
+            features: original ? [original] : [],
+          });
         }
         map.getCanvas().style.cursor = map.queryRenderedFeatures(e.point, {
           layers: ["state-areas", "county-areas"],
@@ -275,11 +350,37 @@ export default function USMap(props: Props) {
           [-125, 23],
           [-66, 50],
         ],
-        { padding: { top: 100, left: 40, right: 40, bottom: 100 }, duration: 0 },
+        {
+          padding: { top: 100, left: 40, right: 40, bottom: 100 },
+          duration: 0,
+        },
       );
     };
+    map.on("movestart", () => {
+      if (container.current) container.current.dataset.cameraMoving = "true";
+    });
+    map.on("moveend", () => {
+      if (container.current) container.current.dataset.cameraMoving = "false";
+    });
     map.on("style.load", initialize);
-    map.on("error", () => setTileError(true));
+    map.on("error", (e) => {
+      setTileError(true);
+      if (
+        "sourceId" in e &&
+        e.sourceId === "openmaptiles" &&
+        map.getLayer("background")
+      )
+        map.setPaintProperty("background", "background-color", "#a7c9cf");
+    });
+    map.on("dataloading", () => {
+      if (container.current) container.current.dataset.mapIdle = "false";
+    });
+    map.on("movestart", () => {
+      if (container.current) container.current.dataset.mapIdle = "false";
+    });
+    map.on("idle", () => {
+      if (container.current) container.current.dataset.mapIdle = "true";
+    });
     map.on("sourcedata", (e) => {
       if (e.sourceId === "us-states" && e.isSourceLoaded && container.current)
         container.current.dataset.boundariesReady = "true";
@@ -356,18 +457,24 @@ export default function USMap(props: Props) {
       readyMap.setLayoutProperty(
         id,
         "visibility",
-        props.showForecast && props.layer === "activity" ? "visible" : "none",
+        props.showForecast &&
+          props.showOverlays !== false &&
+          props.layer === "activity"
+          ? "visible"
+          : "none",
       );
-  }, [readyMap, props.showForecast, props.layer]);
+  }, [readyMap, props.showForecast, props.layer, props.showOverlays]);
   useEffect(() => {
     if (!readyMap) return;
     for (const id of ["scenario-county-fill", "scenario-county-line"])
       readyMap.setLayoutProperty(
         id,
         "visibility",
-        props.layer === "activity" ? "visible" : "none",
+        props.showOverlays !== false && props.layer === "activity"
+          ? "visible"
+          : "none",
       );
-  }, [readyMap, props.layer]);
+  }, [readyMap, props.layer, props.showOverlays]);
   useEffect(() => {
     if (!readyMap || !props.showPopup || !props.selectedEvent) return;
     readyMap.easeTo({
@@ -379,12 +486,53 @@ export default function USMap(props: Props) {
   }, [readyMap, props.selectedEvent, props.showPopup]);
   useEffect(() => {
     if (!readyMap) return;
-    const events = props.data.events.filter(event => !props.visibleEventIds || props.visibleEventIds.includes(event.id));
-    (readyMap.getSource('forecast') as maplibregl.GeoJSONSource).setData({ type: 'FeatureCollection', features: events.filter(e => e.forecast).map(e => ({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: e.forecast! } })) });
-    (readyMap.getSource('impact-zones') as maplibregl.GeoJSONSource).setData({ type: 'FeatureCollection', features: events.filter(e => e.impactZone).map(e => ({ type: 'Feature', properties: { name: e.name }, geometry: { type: 'Polygon', coordinates: [e.impactZone!] } })) });
-    const ids = new Set(props.visibleCountyIds || events.flatMap(e => e.affectedCountyIds || [e.countyId]));
-    (readyMap.getSource('scenario-counties') as maplibregl.GeoJSONSource).setData({ type: 'FeatureCollection', features: props.geography.counties.features.filter(f => ids.has(String(f.id))) });
-  }, [readyMap, props.visibleEventIds, props.visibleCountyIds, props.data, props.geography]);
+    const events = props.data.events.filter(
+      (event) =>
+        !props.visibleEventIds || props.visibleEventIds.includes(event.id),
+    );
+    (readyMap.getSource("forecast") as maplibregl.GeoJSONSource).setData({
+      type: "FeatureCollection",
+      features: events
+        .filter((e) => e.forecast)
+        .map((e) => ({
+          type: "Feature",
+          properties: {},
+          geometry: { type: "LineString", coordinates: e.forecast! },
+        })),
+    });
+    (readyMap.getSource("impact-zones") as maplibregl.GeoJSONSource).setData({
+      type: "FeatureCollection",
+      features: events
+        .filter((e) => e.impactZone)
+        .map((e) => ({
+          type: "Feature",
+          properties: { name: e.name },
+          geometry: { type: "Polygon", coordinates: [e.impactZone!] },
+        })),
+    });
+    const ids = new Set(
+      props.visibleCountyIds ||
+        events.flatMap((e) => e.affectedCountyIds || [e.countyId]),
+    );
+    (
+      readyMap.getSource("scenario-counties") as maplibregl.GeoJSONSource
+    ).setData({
+      type: "FeatureCollection",
+      features: props.geography.counties.features.filter((f) =>
+        ids.has(String(f.id)),
+      ),
+    });
+  }, [
+    readyMap,
+    props.visibleEventIds,
+    props.visibleCountyIds,
+    props.data,
+    props.geography,
+  ]);
+  useEffect(() => {
+    if (!readyMap) return;
+    for (const id of ['county-areas','county-lines']) readyMap.setLayoutProperty(id,'visibility',props.publicMapData ? 'none' : 'visible');
+  }, [readyMap, props.publicMapData]);
   const reset = () =>
     readyMap?.fitBounds(
       [
@@ -422,6 +570,8 @@ export default function USMap(props: Props) {
       )}
       {readyMap && (
         <>
+          {props.publicMapData && props.showRadar && <LiveRadarLayer map={readyMap}/>}
+          {props.publicMapData && <PublicMapLayers map={readyMap} data={props.publicMapData} onCounty={props.onPublicCounty || (() => {})} onAlert={props.onPublicAlert || (() => {})}/>}
           <RiskHeatmap
             map={readyMap}
             counties={props.geography.counties}
@@ -429,15 +579,21 @@ export default function USMap(props: Props) {
             layer={props.layer}
           />
           {props.layer !== "assistance" &&
-            props.data.events.filter(event => !props.visibleEventIds || props.visibleEventIds.includes(event.id)).map((event) => (
-              <DisasterMarker
-                key={event.id}
-                map={readyMap}
-                event={event}
-                selected={props.selectedEvent?.id === event.id}
-                onSelect={props.onEvent}
-              />
-            ))}
+            props.data.events
+              .filter(
+                (event) =>
+                  !props.visibleEventIds ||
+                  props.visibleEventIds.includes(event.id),
+              )
+              .map((event) => (
+                <DisasterMarker
+                  key={event.id}
+                  map={readyMap}
+                  event={event}
+                  selected={props.selectedEvent?.id === event.id}
+                  onSelect={props.onEvent}
+                />
+              ))}
           {props.layer !== "assistance" &&
             props.showPopup &&
             props.selectedEvent && (
@@ -449,15 +605,21 @@ export default function USMap(props: Props) {
                 onClose={props.onClosePopup}
               />
             )}
-          {props.layer === "assistance" &&
-            props.data.resources.filter(resource => !props.visibleCountyIds || props.visibleCountyIds.includes(resource.countyId)).map((resource) => (
-              <ResourceMarker
-                key={resource.id}
-                map={readyMap}
-                resource={resource}
-                onSelect={props.onResource}
-              />
-            ))}
+          {(props.layer === "assistance" || props.showResponseSites) &&
+            props.data.resources
+              .filter(
+                (resource) =>
+                  !props.visibleCountyIds ||
+                  props.visibleCountyIds.includes(resource.countyId),
+              )
+              .map((resource) => (
+                <ResourceMarker
+                  key={resource.id}
+                  map={readyMap}
+                  resource={resource}
+                  onSelect={props.onResource}
+                />
+              ))}
         </>
       )}
       <div className="map-tools panel">
@@ -521,7 +683,15 @@ function ResourceMarker({
         onSelect(resource);
       }}
     >
-      <HeartHandshake size={22} />
+      {resource.type === "Temporary shelter" ? (
+        <House size={20} />
+      ) : resource.type === "Medical assistance" ? (
+        <Cross size={20} />
+      ) : resource.type === "Supply distribution" ? (
+        <PackageOpen size={20} />
+      ) : (
+        <HeartHandshake size={20} />
+      )}
       <span>{resource.name}</span>
     </button>,
     element,

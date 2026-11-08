@@ -5,7 +5,15 @@ export type Severity = "critical" | "high" | "moderate";
 export interface DisasterEvent {
   id: string;
   name: string;
-  type: "Hurricane" | "Flood" | "Wildfire" | "Severe storm" | "Tornado" | "Winter storm" | "Earthquake" | "Extreme heat";
+  type:
+    | "Hurricane"
+    | "Flood"
+    | "Wildfire"
+    | "Severe storm"
+    | "Tornado"
+    | "Winter storm"
+    | "Earthquake"
+    | "Extreme heat";
   coordinates: [number, number];
   severity: Severity;
   area: string;

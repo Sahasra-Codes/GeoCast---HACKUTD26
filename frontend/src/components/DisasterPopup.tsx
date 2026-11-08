@@ -1,8 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Popup, type Map } from "maplibre-gl";
-import { ArrowUpRight, Clock3, Wind, X } from "lucide-react";
+import { ArrowUpRight, Clock3, X } from "lucide-react";
 import { motion } from "framer-motion";
+import DisasterSymbol from "./DisasterSymbol";
 import type { DisasterEvent } from "../types";
 
 export default function DisasterPopup({
@@ -51,7 +52,7 @@ export default function DisasterPopup({
         </button>
       </div>
       <h3>
-        <Wind size={18} />
+        <DisasterSymbol type={event.type} size={20} />
         {event.name}
       </h3>
       <p>

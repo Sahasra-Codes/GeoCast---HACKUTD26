@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Marker, type Map } from "maplibre-gl";
-import { Flame, Waves, Wind } from "lucide-react";
+import DisasterSymbol from "./DisasterSymbol";
 import type { DisasterEvent } from "../types";
 
 export default function DisasterMarker({
@@ -24,11 +24,10 @@ export default function DisasterMarker({
       marker.remove();
     };
   }, [map, event, element]);
-  const Icon =
-    event.type === "Wildfire" ? Flame : event.type === "Flood" ? Waves : Wind;
   return createPortal(
     <button
       aria-label={`Explore ${event.name}`}
+      title={`${event.name} · ${event.severity} severity · Simulated`}
       className={`disaster-marker ${event.severity} ${selected ? "is-selected" : ""}`}
       onClick={(e) => {
         e.stopPropagation();
@@ -37,11 +36,11 @@ export default function DisasterMarker({
     >
       <span className="marker-pulse" />
       <span className="marker-core">
-        <Icon size={21} strokeWidth={1.8} />
+        <DisasterSymbol type={event.type} />
       </span>
       <span className="marker-label">
-        {event.type === "Hurricane"
-          ? "GULF COAST"
+        {event.id === "gulf"
+          ? "Gulf Coast"
           : event.area.split(",")[0].replace(" County", "")}
         <small>{event.type} · Demo</small>
       </span>

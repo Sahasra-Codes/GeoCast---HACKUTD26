@@ -127,15 +127,15 @@ async def declarations(state, county=None):
 async def boundaries(state, county=None):
     async def load():
         layer = 8 if county else 82
-        where = f"STATE='{STATES[state]}'" + (f" AND COUNTY='{county[2:]}'" if county else '')
-        data = await get_json(f'{TIGER}/{layer}/query', {'where': where, 'outFields': 'GEOID,STATE,COUNTY,NAME,BASENAME', 'returnGeometry': 'true', 'outSR': '4326', 'f': 'geojson', 'geometryPrecision': 5, 'maxAllowableOffset': 0.0002, 'resultRecordCount': 5000})
+        where = ("STATE IN (" + ",".join("'" + code + "'" for code in STATES.values()) + ")") if state == "ALL" else f"STATE='{STATES[state]}'" + (f" AND COUNTY='{county[2:]}'" if county else '')
+        data = await get_json(f'{TIGER}/{layer}/query', {'where': where, 'outFields': 'GEOID,STATE,COUNTY,NAME,BASENAME', 'returnGeometry': 'true', 'outSR': '4326', 'f': 'geojson', 'geometryPrecision': 5, 'maxAllowableOffset': 0.01 if state == 'ALL' else 0.0002, 'resultRecordCount': 5000})
         if data.get('type') != 'FeatureCollection' or data.get('exceededTransferLimit'):
             raise SourceError('The geographic service returned incomplete boundaries.')
         for feature in data.get('features', []):
             feature['id'] = feature['properties']['GEOID']
         return data
     url = f'{TIGER}/{8 if county else 82}'
-    return await source('tiger:'+(county or state), 'Census TIGERweb '+('tracts' if county else 'counties'), 'geographic_boundaries', url, 'January 1, 2024; simplified for display (approximately 22 m)', 86400, load)
+    return await source('tiger:'+(county or state), 'Census TIGERweb '+('tracts' if county else 'counties'), 'geographic_boundaries', url, 'January 1, 2024; simplified for display' + (' (national overview)' if state == 'ALL' else ' (approximately 22 m)'), 86400, load)
 
 
 def number(value):
@@ -152,6 +152,9 @@ async def demographics(county):
         if not key:
             raise SourceError('Set an activated CENSUS_API_KEY in backend/.env to load ACS estimates.', 'configuration_required')
         ids = ['B01003_001E','B01003_001M','B11001_001E','B11001_001M','B08201_001E','B08201_001M','B08201_002E','B08201_002M','B28002_001E','B28002_001M','B28002_013E','B28002_013M']
+        children_ids = [f'B01001_{i:03d}E' for i in [3,4,5,6,27,28,29,30]]
+        older_ids = [f'B01001_{i:03d}E' for i in [20,21,22,23,24,25,44,45,46,47,48,49]]
+        ids += ['B01001_001E', 'B17001_001E', 'B17001_002E'] + children_ids + older_ids
         table = await get_json(ACS, {'get': 'NAME,'+','.join(ids), 'for': 'county:'+county[2:], 'in': 'state:'+county[:2], 'key': key})
         if not isinstance(table, list) or len(table) != 2:
             raise SourceError('Census did not return a county estimate.')
@@ -161,8 +164,16 @@ async def demographics(county):
         def percent(numerator, denominator):
             n, d = number(row.get(numerator)), number(row.get(denominator))
             return round(n/d*100, 1) if n is not None and d and n <= d else None
-        return {'countyId': county, 'name': row['NAME'], 'period': '2020–2024', 'population': metric('B01003_001'), 'households': metric('B11001_001'), 'noVehicleHouseholds': metric('B08201_002'), 'vehicleUniverse': metric('B08201_001'), 'noInternetHouseholds': metric('B28002_013'), 'internetUniverse': metric('B28002_001'), 'noVehiclePercent': percent('B08201_002E','B08201_001E'), 'noInternetPercent': percent('B28002_013E','B28002_001E')}
-    return await source('acs:'+county, 'Census ACS 2024 five-year estimates', 'survey_estimates', ACS+'.html', '2020–2024; count margins of error are 90% confidence', 86400, load)
+        def total(codes):
+            values = [number(row.get(code)) for code in codes]
+            return sum(values) if all(value is not None for value in values) else None
+        age_total = number(row.get('B01001_001E'))
+        children, older = total(children_ids), total(older_ids)
+        adults = age_total - children - older if all(value is not None for value in [age_total, children, older]) and children + older <= age_total else None
+        age_groups = {'total': age_total, 'children': children, 'adults': adults, 'olderAdults': older} if adults is not None else None
+        context = {'ageGroups': age_groups, 'povertyPercent': percent('B17001_002E','B17001_001E')}
+        return {**context, 'countyId': county, 'name': row['NAME'], 'period': '2020–2024', 'population': metric('B01003_001'), 'households': metric('B11001_001'), 'noVehicleHouseholds': metric('B08201_002'), 'vehicleUniverse': metric('B08201_001'), 'noInternetHouseholds': metric('B28002_013'), 'internetUniverse': metric('B28002_001'), 'noVehiclePercent': percent('B08201_002E','B08201_001E'), 'noInternetPercent': percent('B28002_013E','B28002_001E')}
+    return await source('acs-insights-v2:'+county, 'Census ACS 2024 five-year estimates', 'survey_estimates', ACS+'.html', '2020–2024; count margins of error are 90% confidence', 86400, load)
 
 
 async def risk_index(state, county=None):
@@ -224,3 +235,13 @@ async def state_demographics(state):
 @router.get('/alerts')
 async def nationwide_alerts():
     return await alerts()
+
+
+@router.get('/insights/all')
+async def nationwide_insights():
+    warning_source, county_source = await asyncio.gather(alerts(), boundaries('ALL'))
+    from .observations import earthquakes
+    earthquake_source = await earthquakes('ALL', county_source)
+    return {'state': 'ALL', 'generatedAt': now(), 'sources': {
+        'noaa': warning_source, 'boundaries': county_source, 'earthquakes': earthquake_source,
+    }}

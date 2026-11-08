@@ -2,7 +2,6 @@
 import {
   ArrowUpRight,
   ChevronDown,
-  Compass,
   Globe2,
   MapPin,
   Search,
@@ -85,16 +84,11 @@ export default function GeoSidebar(props: Props) {
   return (
     <aside className="geo-sidebar">
       <div className="sidebar-intro">
-        <div className="overline">
-          <Compass size={13} />A MORE HUMAN PERSPECTIVE
-        </div>
-        <h1>
-          Explore <em>GEO.</em>
-        </h1>
+        <h1>Disaster explorer</h1>
         <p>
-          Understand the impact.
+          Find impacted areas, assess needs,
           <br />
-          Find where you can make a difference.
+          and connect to resources.
         </p>
       </div>
       <div className="sidebar-scroll">
@@ -120,7 +114,7 @@ export default function GeoSidebar(props: Props) {
             <ChevronDown size={13} />
           </div>
           <label className="field-label" htmlFor="geo-search">
-            Where are you looking?
+            Geographic search
           </label>
           <div className="geo-search">
             <Search size={16} />
@@ -130,7 +124,7 @@ export default function GeoSidebar(props: Props) {
               role="combobox"
               aria-expanded={active && !!term}
               aria-controls="geo-suggestions"
-              placeholder="City, county, state, or ZIP"
+              placeholder="Search a location…"
               value={query}
               onFocus={() => setActive(true)}
               onChange={(e) => {
@@ -237,7 +231,7 @@ export default function GeoSidebar(props: Props) {
           onClick={props.onFind}
           disabled={!props.geography}
         >
-          <span>Find affected areas</span>
+          <span>Apply filters</span>
           <ArrowUpRight size={19} />
         </button>
         <div className="filter-footer">
@@ -249,17 +243,12 @@ export default function GeoSidebar(props: Props) {
           </span>
         </div>
         <div className="sidebar-footnote">
-          <span className="seed-symbol">✳</span>
-          <p>
-            Better understanding.
-            <br />
-            <em>More meaningful response.</em>
-          </p>
+          <span className="demo-label">Demo scenarios</span>
           <button
             aria-label="About this demo and data sources"
             onClick={props.onAbout}
           >
-            <Globe2 size={16} />
+            <Globe2 size={14} />
           </button>
         </div>
       </div>

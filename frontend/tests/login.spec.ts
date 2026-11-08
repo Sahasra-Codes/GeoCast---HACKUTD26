@@ -1,4 +1,4 @@
-﻿import { expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test("login preview supports password visibility and honest sign-in feedback", async ({ page }) => {
   await page.goto("/login");
@@ -17,5 +17,5 @@ test("login preview supports password visibility and honest sign-in feedback", a
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.screenshot({ path: "test-results/login-mobile.png", fullPage: true });
   await page.getByRole("link", { name: "Explore the demo" }).last().click();
-  await expect(page.getByRole("link", { name: "GEO home" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "State Farm GeoCast home" })).toBeVisible();
 });

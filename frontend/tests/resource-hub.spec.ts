@@ -1,0 +1,23 @@
+import { test, expect } from "@playwright/test";
+test("resource categories filter, search, and display provider results", async ({ page }) => {
+  await page.route("**/api/resources/**", route => route.fulfill({ json: { source: "Ready.gov", status: "available", retrievedAt: new Date().toISOString(), note: "Official preparedness links", items: [{ title: "Build an emergency kit", description: "Household supplies", url: "https://www.ready.gov/kit" }] } }));
+  await page.goto("/resources");
+  await expect(page.getByRole("button", { name: "Emergency Shelters Find open shelters near you" })).toBeVisible();
+  await page.screenshot({ path: "test-results/resources-desktop.png", fullPage: true });
+  await page.getByRole("button", { name: "Safety", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Emergency Shelters Find open shelters near you" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Safety Guides Preparedness and recovery checklists" }).click();
+  await page.getByRole("combobox", { name: "Resource county" }).selectOption({ label: "Dallas" });
+  const request = page.waitForRequest(r => r.url().includes("/api/resources/safety") && r.url().includes("county=48113"));
+  await page.getByRole("button", { name: "Find resources", exact: true }).click();
+  await request;
+  await expect(page.getByRole("heading", { name: "Build an emergency kit" })).toBeVisible();
+  await page.getByRole("combobox", { name: "Resource state" }).selectOption("CA");
+  await expect(page.getByRole("combobox", { name: "Resource county" })).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Find resources", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "All", exact: true }).click();
+  await page.getByRole("textbox", { name: "Search resources", exact: true }).fill("Medical");
+  await expect(page.locator(".resource-hub-card")).toHaveCount(1);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});

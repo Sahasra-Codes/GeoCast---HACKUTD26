@@ -34,46 +34,37 @@ export default function PopulationNeedFilters({
         : [...selected, need],
     );
   return (
-    <details className="population-filters" open>
-      <summary>
-        <span>
-          Population needs
-          <span className="count-pill">{selected.length || "20"}</span>
-        </span>
-        <ChevronDown size={15} />
-      </summary>
-      <p className="filter-description">
-        A little context. A clearer picture of need.
-      </p>
-      <div className="match-control">
-        <span>Match selected needs</span>
-        <div aria-label="Need matching mode" role="group">
-          {(["any", "all"] as const).map((mode) => (
-            <button
-              key={mode}
-              aria-pressed={match === mode}
-              className={match === mode ? "chosen" : ""}
-              onClick={() => onMatch(mode)}
-            >
-              {mode === "any" ? "Any" : "All"}
-            </button>
-          ))}
-        </div>
+    <section className="population-filters">
+      <div className="population-title">
+        <h2>Population need</h2>
+        <span className="count-pill">{selected.length}</span>
       </div>
-      {needCategories.map((category, i) => {
+      {needCategories.map((category) => {
         const Icon = icons[category.icon as keyof typeof icons];
+        const enabled = category.needs.some((n) => selected.includes(n));
+        const toggleCategory = () =>
+          onChange(
+            enabled
+              ? selected.filter((n) => !category.needs.includes(n))
+              : [...new Set([...selected, ...category.needs])],
+          );
         return (
           <details
-            className="need-category"
+            className={`need-category ${enabled ? "category-selected" : ""}`}
             key={category.title}
-            open={i === 0 || i === 4}
           >
             <summary>
-              <span>
-                <Icon size={14} />
-                {category.title}
-              </span>
-              <ChevronDown size={13} />
+              <label onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={enabled}
+                  onChange={toggleCategory}
+                  aria-label={`${category.title} needs`}
+                />
+                <Icon size={15} />
+                <span>{category.title}</span>
+              </label>
+              <ChevronDown size={12} />
             </summary>
             <div className="need-chips">
               {category.needs.map((need) => (
@@ -84,14 +75,28 @@ export default function PopulationNeedFilters({
                   onClick={() => toggle(need)}
                   className={selected.includes(need) ? "selected" : ""}
                 >
-                  {selected.includes(need) && <Check size={11} />}
-                  {need}
+                  {selected.includes(need) && <Check size={11} />} {need}
                 </motion.button>
               ))}
             </div>
           </details>
         );
       })}
-    </details>
+      <div className="match-control">
+        <span>Match needs</span>
+        <div role="group" aria-label="Need matching mode">
+          {(["any", "all"] as const).map((mode) => (
+            <button
+              key={mode}
+              className={match === mode ? "chosen" : ""}
+              aria-pressed={match === mode}
+              onClick={() => onMatch(mode)}
+            >
+              {mode === "any" ? "Any" : "All"}
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

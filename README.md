@@ -54,3 +54,18 @@ Chat history is kept in memory for this page session; the last 19 messages and
 current filter context are sent to Gemini when you ask a question.
 The Vite development proxy forwards `/api` to port 8000. For production, proxy
 `/api` to FastAPI on the same origin. Do not expose provider keys through Vite.
+
+## Resources page
+
+Open `/resources`. The page uses Red Cross's official shelter directory link,
+OpenStreetMap/Overpass for food and water locations, OpenStreetMap/Overpass
+for hospitals, clinics, and pharmacies, DriveTexas for Texas road conditions, OpenFEMA for
+financial assistance declarations, and NWS alerts with Ready.gov guidance.
+
+Choose a state and county for resource searches. Food and medical searches use
+a 10 km radius around the county center, not full county coverage. County-center coordinates are sent to the selected provider only when
+searching. OpenStreetMap data includes attribution and is not verified aid availability.
+Set `DRIVETEXAS_API_KEY` in `backend/.env` and restart
+FastAPI. Food and medical searches require no API key. DriveTexas keys require
+approval from https://api.drivetexas.org/. Other listed providers do not need keys.
+No Red Cross live API is claimed. Road511 is no longer used by the resources page.

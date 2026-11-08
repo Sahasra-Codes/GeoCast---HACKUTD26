@@ -7,6 +7,9 @@ maplibregl.setWorkerUrl(workerUrl);
 import {
   Crosshair,
   HeartHandshake,
+  House,
+  Cross,
+  PackageOpen,
   Minus,
   Plus,
   RotateCcw,
@@ -23,6 +26,9 @@ import mapStyle from "../data/basemap.json";
 import DisasterMarker from "./DisasterMarker";
 import DisasterPopup from "./DisasterPopup";
 import RiskHeatmap from "./RiskHeatmap";
+import LiveRadarLayer from "./LiveRadarLayer";
+import PublicMapLayers from "./PublicMapLayers";
+import type { PublicMapData } from "../publicDataTypes";
 
 interface Props {
   geography: Geography;
@@ -33,6 +39,12 @@ interface Props {
   showPopup: boolean;
   showForecast: boolean;
   showOverlays?: boolean;
+  publicMapData?: PublicMapData;
+  onPublicCounty?: (id: string) => void;
+  onPublicAlert?: (id: string) => void;
+  showRadar?: boolean;
+  showResponseSites?: boolean;
+  radarFrame?: number;
   onEvent: (event: DisasterEvent) => void;
   onRegion: (region: GeographicRegion) => void;
   onExplore: (event: DisasterEvent) => void;
@@ -458,7 +470,9 @@ export default function USMap(props: Props) {
       readyMap.setLayoutProperty(
         id,
         "visibility",
-        props.layer === "activity" ? "visible" : "none",
+        props.showOverlays !== false && props.layer === "activity"
+          ? "visible"
+          : "none",
       );
   }, [readyMap, props.layer, props.showOverlays]);
   useEffect(() => {
@@ -515,6 +529,10 @@ export default function USMap(props: Props) {
     props.data,
     props.geography,
   ]);
+  useEffect(() => {
+    if (!readyMap) return;
+    for (const id of ['county-areas','county-lines']) readyMap.setLayoutProperty(id,'visibility',props.publicMapData ? 'none' : 'visible');
+  }, [readyMap, props.publicMapData]);
   const reset = () =>
     readyMap?.fitBounds(
       [
@@ -552,6 +570,8 @@ export default function USMap(props: Props) {
       )}
       {readyMap && (
         <>
+          {props.publicMapData && <LiveRadarLayer map={readyMap}/>}
+          {props.publicMapData && <PublicMapLayers map={readyMap} data={props.publicMapData} onCounty={props.onPublicCounty || (() => {})} onAlert={props.onPublicAlert || (() => {})}/>}
           <RiskHeatmap
             map={readyMap}
             counties={props.geography.counties}
@@ -585,7 +605,7 @@ export default function USMap(props: Props) {
                 onClose={props.onClosePopup}
               />
             )}
-          {props.layer === "assistance" &&
+          {(props.layer === "assistance" || props.showResponseSites) &&
             props.data.resources
               .filter(
                 (resource) =>
@@ -663,7 +683,15 @@ function ResourceMarker({
         onSelect(resource);
       }}
     >
-      <HeartHandshake size={22} />
+      {resource.type === "Temporary shelter" ? (
+        <House size={20} />
+      ) : resource.type === "Medical assistance" ? (
+        <Cross size={20} />
+      ) : resource.type === "Supply distribution" ? (
+        <PackageOpen size={20} />
+      ) : (
+        <HeartHandshake size={20} />
+      )}
       <span>{resource.name}</span>
     </button>,
     element,

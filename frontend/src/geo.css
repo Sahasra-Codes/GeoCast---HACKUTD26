@@ -1,6 +1,6 @@
 ﻿@import "tailwindcss";
 :root {
-  font-family: "Instrument Serif", Georgia, serif;
+  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
   color: #293b35;
   background: #f5f2e9;
   font-synthesis: none;
@@ -1686,7 +1686,7 @@ button svg {
   border-radius: 12px;
   padding: 17px;
   box-shadow: 0 12px 28px #3b55383b;
-  font-family: "Instrument Serif", Georgia, serif;
+  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
 }
 .popup-top {
   display: flex;
@@ -1789,7 +1789,7 @@ button svg {
 .maplibregl-ctrl-attrib {
   background: #faf9ebc9 !important;
   color: #809572 !important;
-  font-family: "Instrument Serif", Georgia, serif !important;
+  font-family: "Segoe UI", Tahoma, Arial, sans-serif !important;
   font-size: 9px !important;
   line-height: 15px !important;
 }
@@ -2681,7 +2681,7 @@ button svg {
   }
 }
 .maplibregl-map {
-  font-family: "Instrument Serif", Georgia, serif;
+  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
 }
 .overline,
 .geo-footer,

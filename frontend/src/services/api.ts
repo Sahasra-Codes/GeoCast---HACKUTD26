@@ -1,29 +1,7 @@
 import { feature } from "topojson-client";
 import type { Topology, GeometryCollection } from "topojson-specification";
 import type { FeatureCollection, Geometry, Position } from "geojson";
-import type { Geography, GeographicRegion, IntelligenceData } from "../types";
-import { mockData } from "../data/mock";
-
-const base = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
-export async function getIntelligence(
-  signal?: AbortSignal,
-): Promise<IntelligenceData> {
-  if (!base) return mockData;
-  const response = await fetch(`${base}/intelligence`, { signal });
-  if (!response.ok)
-    throw new Error(`Intelligence service returned ${response.status}`);
-  const data = (await response.json()) as IntelligenceData;
-  if (
-    !Array.isArray(data.events) ||
-    !Array.isArray(data.predictions) ||
-    !Array.isArray(data.resources) ||
-    !data.updatedAt ||
-    !["demo", "connected"].includes(data.mode)
-  )
-    throw new Error("Invalid intelligence response");
-  return data;
-}
-
+import type { Geography, GeographicRegion } from "../types";
 let geographyPromise: Promise<Geography> | undefined;
 export function getGeography(): Promise<Geography> {
   if (!geographyPromise)
